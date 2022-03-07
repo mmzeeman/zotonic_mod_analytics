@@ -97,7 +97,7 @@ initialising(enter, _OldState, Data) ->
     {ok, DB} = educkdb:open("ducklog.db"),
     {ok, Conn} = educkdb:connect(DB),
 
-    case table_exists(Conn, <<"">>) of
+    case table_exists(Conn, <<"access_log">>) of
        true ->
             ok;
        false ->
