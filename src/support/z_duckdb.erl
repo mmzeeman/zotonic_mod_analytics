@@ -19,16 +19,6 @@
 -module(z_duckdb).
 
 -export([
-    squery/2,
-
-    table_exists/2
 ]).
-
-%% @doc Simple query without parameters.
-squery(Conn, Query) ->
-    case educkdb:query(Conn, Query) of
-        {ok, Result} -> educkdb:extract_result(Result);
-        {error, _}=E -> E
-    end.
 
 

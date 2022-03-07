@@ -97,12 +97,80 @@ initialising(enter, _OldState, Data) ->
     {ok, DB} = educkdb:open("ducklog.db"),
     {ok, Conn} = educkdb:connect(DB),
 
-    case squery(Conn,
-    educkdb
+    case table_exists(Conn, <<"">>) of
+       true ->
+            ok;
+       false ->
+            {ok, [], []} = educkdb:squery(Conn, "CREATE TYPE request_status_cat AS ENUM('1xx', '2xx', '3xx', '4xx', '5xx')"),
+            {ok, [], []} = educkdb:squery(Conn, "CREATE SEQUENCE access_log_serial CYCLE"),
+            {ok, [], []} = educkdb:squery(Conn, "CREATE TABLE access_log (
+                                              id bigint DEFAULT nextval('access_log_serial') PRIMARY KEY,
+                                              version VARCHAR(10),
+                                              method VARCHAR(10),
+
+                                              req_start BIGINT,
+                                              req_bytes UINTEGER,
+                                              resp_category request_status_cat,
+                                              resp_code USMALLINT,
+                                              resp_bytes UINTEGER,
+
+                                              site VARCHAR(128),
+                                              path VARCHAR,
+                                              referer VARCHAR,
+                                            
+                                              controller VARCHAR,
+                                              dispatch_rule VARCHAR,
+
+                                              duration_process uinteger,
+                                              duration_total uinteger,
+
+                                              peer_ip varchar,
+                                              session_id varchar,
+                                              user_id uinteger,
+                                              language varchar,
+                                              timezone varchar, 
+                                              user_agent varchar)"),
+                                           
+
+
+            %% version, (varchar(10))
+            %% method
+            %%
+            %% req_start
+            %% req_bytes
+            %%
+            %%
+            %% resp_category, 1xx, 2xx, 3xx, 4xx, 5xx, unknown  (enum)
+            %% resp_code, 100 - 599  (short integer)
+            %% resp_status (varchar(20))
+            %% resp_bytes, (unsigned int)
+
+            %% site, (varchar)
+            %% path, (varchar) 
+            %% referer, (varchar)
+
+            %% controller, (varchar)
+            %% dispatch_rule, (varchar)
+            %%
+            %% duration_process, (integer)
+            %% duration_total, (integer)
+
+            %% peer_ip, (varchar?) 
+            %% session_id, (varchar)
+            %% user_id, integer
+            %% user_agent, (varchar)
+            %% timezone, (varchar)
+
+            %% reason, varchar
+
+            %% timestamp
+
+            ok
+    end, 
+    %educkdb
 
     %% [TODO] open the database, check schema and move to the right state.
-    {next_state, initialising, Data#data{database=DB, connection=Conn},
-     [{state_timeout, 0, initialised}]};
+    {next_state, initialising, Data#data{database=DB, connection=Conn}, [{state_timeout, 0, initialised}]};
 initialising(state_timeout, initialised, Data) ->
     {next_state, clean, Data};
 initialising(EventType, EventContent, Data) ->
@@ -145,13 +213,8 @@ handle_event(EventType, EventContent, StateName, Data) ->
                   state => StateName} ),
     {keep_state, Data}.
 
-squery(Conn, Query) ->
-    case educkdb:query(Conn, Query) of
-        {ok, Result} -> educkdb:extract_result(Result);
-        {error, _}=E -> E
-    end.
-
-table_exists(Conn, Name) ->
-    case squery(Conn, ) of
+table_exists(Conn, Table) ->
+    {ok, _, ExistingTables} = educkdb:squery(Conn, "PRAGMA show_tables;"),
+    lists:member(Table, lists:flatten(ExistingTables)).
 
 
