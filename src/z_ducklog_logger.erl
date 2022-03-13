@@ -45,9 +45,11 @@
 
 
 -record(data, {
-    database,
-    connection,
-    appender 
+          database,
+          connection,
+          appender,
+
+          buffered_count = 0
 }).
 
 
@@ -94,6 +96,7 @@ terminate(Reason, _StateName, _Data) ->
 initialising(enter, _OldState, Data) ->
     ?DEBUG({enter_initialising, Data}),
 
+    %% [todo] Use a proper location via config.
     {ok, DB} = educkdb:open("ducklog.db"),
     {ok, Conn} = educkdb:connect(DB),
 
@@ -102,9 +105,7 @@ initialising(enter, _OldState, Data) ->
             ok;
        false ->
             {ok, [], []} = educkdb:squery(Conn, "CREATE TYPE request_status_cat AS ENUM('1xx', '2xx', '3xx', '4xx', '5xx')"),
-            {ok, [], []} = educkdb:squery(Conn, "CREATE SEQUENCE access_log_serial CYCLE"),
             {ok, [], []} = educkdb:squery(Conn, "CREATE TABLE access_log (
-                                              id bigint DEFAULT nextval('access_log_serial') PRIMARY KEY,
                                               version VARCHAR(10),
                                               method VARCHAR(10),
 
@@ -129,9 +130,10 @@ initialising(enter, _OldState, Data) ->
                                               user_id uinteger,
                                               language varchar,
                                               timezone varchar, 
-                                              user_agent varchar)"),
-                                           
-
+                                              user_agent varchar,
+                                              
+                                              timestamp timestamp
+                                         )"),
 
             %% version, (varchar(10))
             %% method
@@ -167,10 +169,12 @@ initialising(enter, _OldState, Data) ->
 
             ok
     end, 
-    %educkdb
+    
+    %% Open an appender.
+    {ok, Appender} = educkdb:appender_create(Conn, undefined, <<"access_log">>),
 
     %% [TODO] open the database, check schema and move to the right state.
-    {next_state, initialising, Data#data{database=DB, connection=Conn}, [{state_timeout, 0, initialised}]};
+    {next_state, initialising, Data#data{database=DB, connection=Conn, appender=Appender}, [{state_timeout, 0, initialised}]};
 initialising(state_timeout, initialised, Data) ->
     {next_state, clean, Data};
 initialising(EventType, EventContent, Data) ->
@@ -179,12 +183,24 @@ initialising(EventType, EventContent, Data) ->
 %% Clean, and waiting for input
 clean(enter, _OldState, Data) ->
     {next_state, clean, Data};
+clean({call, From}, {log, #http_log_access{}=A}, #data{appender=Appender}=Data) ->
+    gen_statem:reply(From, append(Appender, A)),
+    {next_state, buffering, Data#data{ buffered_count = 1 }};
+
 clean(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, clean, Data).
 
 %% Buffering log messages via the appender.
 buffering(enter, _OldState, Data) ->
+    %% Set a timeout to flush... 
+    ?DEBUG({enter_buffering, Data}),
     {next_state, buffering, Data};
+
+buffering({call, From}, {log, #http_log_access{}=A}, #data{appender=Appender, buffered_count = C}=Data) ->
+    gen_statem:reply(From, append(Appender, A)),
+
+    educkdb:appender_flush(Appender),
+    {next_state, buffering, Data#data{ buffered_count = C + 1 }};
 buffering(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, buffering, Data).
 
@@ -199,6 +215,70 @@ flushing(EventType, EventContent, Data) ->
 %%
 %% Helpers
 %%
+
+append(Appender, #http_log_access{timestamp=Ts,
+                                  status=Status,
+                                  status_category=StatusCategory,
+                                  method=Method,
+                                  metrics=Metrics
+                                 }) ->
+
+    ?DEBUG({append, Ts, Status, StatusCategory, Metrics}),
+
+    append_value(Appender, maps:get(http_version, Metrics, undefined)),
+    append_value(Appender, Method),
+
+    append_value(Appender, undefined), % maps:get(req_start, Metrics, undefined)),
+    append_value(Appender, maps:get(req_bytes, Metrics, undefined)),
+
+    append_value(Appender, StatusCategory),
+    append_value(Appender, Status),
+    append_value(Appender, maps:get(resp_bytes, Metrics, undefined)),
+
+    append_value(Appender, maps:get(site, Metrics, undefined)),
+    append_value(Appender, maps:get(path, Metrics, undefined)),
+    append_value(Appender, maps:get(referer, Metrics, undefined)),
+
+    append_value(Appender, maps:get(controller, Metrics, undefined)),
+    append_value(Appender, maps:get(dispatch_rule, Metrics, undefined)),
+
+    ok = educkdb:append_uint32(Appender, maps:get(duration_process_usec, Metrics, 0)),
+    ok = educkdb:append_uint32(Appender, maps:get(duration_total_usec, Metrics, 0)),
+
+    ok = educkdb:append_null(Appender), %% [todo] ip-address
+
+    append_value(Appender, maps:get(session_id, Metrics, undefined)),
+    case maps:get(user_id, Metrics, undefined) of
+        UserId when is_integer(UserId) ->
+            ok = educkdb:append_uint32(Appender, UserId);
+        _ ->
+            ok = educkdb:append_null(Appender)
+    end,
+
+    append_value(Appender, maps:get(language, Metrics, undefined)),
+    append_value(Appender, maps:get(timezone, Metrics, undefined)),
+    append_value(Appender, maps:get(user_agent, Metrics, undefined)),
+
+    ok = educkdb:append_null(Appender), %% [todo] timestamp
+
+    ok = educkdb:appender_end_row(Appender).
+
+append_value(Appender, undefined) ->
+    ok = educkdb:append_null(Appender);
+
+append_value(Appender, '1xx') -> ok = educkdb:append_int8(Appender, 1);
+append_value(Appender, '2xx') -> ok = educkdb:append_int8(Appender, 2);
+append_value(Appender, '3xx') -> ok = educkdb:append_int8(Appender, 3);
+append_value(Appender, '4xx') -> ok = educkdb:append_int8(Appender, 4);
+append_value(Appender, '5xx') -> ok = educkdb:append_int8(Appender, 5);
+
+append_value(Appender, Integer) when is_integer(Integer) ->
+    ok = educkdb:append_int32(Appender, Integer);
+append_value(Appender, Atom) when is_atom(Atom) ->
+    ?DEBUG(Atom),
+    ok = educkdb:append_varchar(Appender, z_convert:to_binary(Atom));
+append_value(Appender, Bin) when is_binary(Bin) ->
+    ok = educkdb:append_varchar(Appender, Bin).
 
 handle_event({call, From}, CallContent, StateName, Data) ->
     ?LOG_ERROR(#{ text => "Unexpected call in state",
