@@ -25,6 +25,7 @@
 -export([
     start_link/0,
     log/1,
+    get_connection/0,
 
     inet_type/1,
     inet_v4_ntoe/1,
@@ -73,6 +74,11 @@ start_link() ->
 log(#http_log_access{}=Log) ->
     % ?DEBUG(Log),
     gen_statem:call(?MODULE, {log, Log}).
+
+%% @doc Get a connection to the database.
+get_connection() ->
+    gen_statem:call(?MODULE, get_connection).
+
 
 %%
 %% gen_statem callbacks
@@ -323,6 +329,10 @@ append_value(Appender, Atom) when is_atom(Atom) ->
 append_value(Appender, Bin) when is_binary(Bin) ->
     ok = educkdb:append_varchar(Appender, Bin).
 
+handle_event({call, From}, get_connection, _, #data{database=Db}=Data) ->
+    {ok, Conn} = educkdb:connect(Db),
+    gen_statem:reply(From, {ok, Conn}),
+    {keep_state, Data};
 handle_event({call, From}, CallContent, StateName, Data) ->
     ?LOG_ERROR(#{ text => "Unexpected call in state",
                   content => CallContent,
