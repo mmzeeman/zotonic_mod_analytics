@@ -24,7 +24,12 @@
 
 -export([
     start_link/0,
-    log/1
+    log/1,
+
+    inet_type/1,
+    inet_v4_ntoe/1,
+    inet_v6_ntoe/1,
+    inet_eton/1
 ]).
 
 %% gen_statem exports
@@ -42,7 +47,6 @@
     buffering/3,
     flushing/3
 ]).
-
 
 -record(data, {
           database,
@@ -115,20 +119,20 @@ initialising(enter, _OldState, Data) ->
                                               resp_bytes UINTEGER,
 
                                               site VARCHAR(128),
-                                              path VARCHAR,
-                                              referer VARCHAR,
+                                              path VARCHAR(512),
+                                              referer VARCHAR(512),
                                             
-                                              controller VARCHAR,
-                                              dispatch_rule VARCHAR,
+                                              controller VARCHAR(128),
+                                              dispatch_rule VARCHAR(128),
 
                                               duration_process uinteger,
                                               duration_total uinteger,
 
                                               peer_ip varchar,
-                                              session_id varchar,
+                                              session_id varchar(50),
                                               user_id uinteger,
-                                              language varchar,
-                                              timezone varchar, 
+                                              language varchar(10),
+                                              timezone varchar(64), 
                                               user_agent varchar,
                                               
                                               timestamp timestamp
@@ -167,12 +171,9 @@ initialising(enter, _OldState, Data) ->
 
             ok
     end, 
-    
-    %% Open an appender.
-    {ok, Appender} = educkdb:appender_create(Conn, undefined, <<"access_log">>),
 
     %% [TODO] open the database, check schema and move to the right state.
-    {next_state, initialising, Data#data{database=DB, connection=Conn, appender=Appender}, [{state_timeout, 0, initialised}]};
+    {next_state, initialising, Data#data{database=DB, connection=Conn}, [{state_timeout, 0, initialised}]};
 initialising(state_timeout, initialised, Data) ->
     {next_state, clean, Data};
 initialising(EventType, EventContent, Data) ->
@@ -187,9 +188,12 @@ initialising(EventType, EventContent, Data) ->
 clean(enter, _OldState, Data) ->
     %?DEBUG({enter_clean, Data}),
     {next_state, clean, Data};
-clean({call, From}, {log, #http_log_access{}=A}, #data{appender=Appender}=Data) ->
+clean({call, From}, {log, #http_log_access{}=A}, #data{connection=Conn}=Data) ->
+    %% Create the appender, and go to buffering state.
+    {ok, Appender} = educkdb:appender_create(Conn, undefined, <<"access_log">>),
+    
     gen_statem:reply(From, append(Appender, A)),
-    {next_state, buffering, Data#data{ nr_buffered = 1 }};
+    {next_state, buffering, Data#data{ appender=Appender, nr_buffered=1 }};
 
 clean(EventType, EventContent, Data) ->
     handle_event(EventType, EventContent, clean, Data).
@@ -201,6 +205,8 @@ clean(EventType, EventContent, Data) ->
 
 %% Buffering log messages via the appender.
 buffering(enter, _OldState, Data) ->
+    %% Create the appender.
+    
     %% Set a timeout to flush... 
     % ?DEBUG({enter_buffering, Data}),
     {next_state, buffering, Data, [{state_timeout, 2000, flush}]};
@@ -230,11 +236,10 @@ buffering(EventType, EventContent, Data) ->
 
 %% Flush the appender and move to clean state.
 flushing(enter, _OldState, #data{appender=Appender}=Data) ->
-    % ?DEBUG({enter_flusing, Data}),
+    ?DEBUG({enter_flusing, Data}),
     ok = educkdb:appender_flush(Appender),
-
-    %% [TODO] Flush the appender and reset the count
-    {next_state, flushing, Data, [{state_timeout, 0, flushed}]};
+    %% Drop the reference to the appender
+    {next_state, flushing, Data#data{ appender=undefined }, [{state_timeout, 0, flushed}]};
 flushing(state_timeout, flushed, Data) ->
     {next_state, clean, Data};
 
@@ -297,14 +302,18 @@ append(Appender, #http_log_access{timestamp=Ts,
 append_value(Appender, undefined) ->
     ok = educkdb:append_null(Appender);
 
+%% Response code class
 append_value(Appender, '1xx') -> ok = educkdb:append_uint8(Appender, 1);
 append_value(Appender, '2xx') -> ok = educkdb:append_uint8(Appender, 2);
 append_value(Appender, '3xx') -> ok = educkdb:append_uint8(Appender, 3);
 append_value(Appender, '4xx') -> ok = educkdb:append_uint8(Appender, 4);
 append_value(Appender, '5xx') -> ok = educkdb:append_uint8(Appender, 5);
 
-append_value(Appender, {_,_,_,_}=Ipv4) -> ok = educkdb:append_varchar(Appender, inet:ntoa(Ipv4));
-append_value(Appender, {_,_,_,_,_,_,_,_}=Ipv6) -> ok = educkdb:append_varchar(Appender, inet:ntoa(Ipv6));
+%% IP Addresses
+append_value(Appender, {_,_,_,_}=Ipv4) ->
+    ok = educkdb:append_varchar(Appender, inet:ntoa(Ipv4));
+append_value(Appender, {_,_,_,_,_,_,_,_}=Ipv6) ->
+    ok = educkdb:append_varchar(Appender, inet:ntoa(Ipv6));
 append_value(Appender, {M,S,Mi}=Ts) when is_integer(M) andalso is_integer(S) andalso is_integer(Mi) ->
     ok = educkdb:append_timestamp(Appender, Ts);
 append_value(Appender, Integer) when is_integer(Integer) ->
@@ -327,7 +336,120 @@ handle_event(EventType, EventContent, StateName, Data) ->
                   state => StateName} ),
     {keep_state, Data}.
 
+%%
+%% Database Helpers
+%%
+
+
 table_exists(Conn, Table) ->
-    {ok, _, ExistingTables} = educkdb:squery(Conn, "PRAGMA show_tables;"),
-    lists:member(Table, lists:flatten(ExistingTables)).
+    case educkdb:squery(Conn, "PRAGMA show_tables;") of
+        {ok, [ #{ data := ExistingTables, name := <<"name">> } ]} ->
+            lists:member(Table, ExistingTables);
+        {ok, _} ->
+            false
+    end.
+
+ensure_log_table(Conn) ->
+    case table_exists(Conn, <<"access_log">>) of
+       true ->
+            ok;
+       false ->
+            {ok, []} = educkdb:squery(Conn, "CREATE TABLE access_log (
+                                              req_version VARCHAR(10),
+                                              req_method VARCHAR(10),
+
+                                              req_bytes UINTEGER,
+
+                                              resp_category UTINYINT,
+                                              resp_code USMALLINT,
+                                              resp_bytes UINTEGER,
+
+                                              site VARCHAR(128),
+                                              path VARCHAR(512),
+                                              referer VARCHAR(512),
+                                            
+                                              controller VARCHAR(128),
+                                              dispatch_rule VARCHAR(128),
+
+                                              duration_process uinteger,
+                                              duration_total uinteger,
+
+                                              peer_ip varchar,
+                                              session_id varchar(50),
+                                              user_id uinteger,
+                                              language varchar(10),
+                                              timezone varchar(64), 
+                                              user_agent varchar,
+                                              
+                                              timestamp timestamp
+                                         )"),
+
+            %% version, (varchar(10))
+            %% method
+            %%
+            %% req_bytes
+            %%
+            %%
+            %% resp_category, 1xx, 2xx, 3xx, 4xx, 5xx, unknown  (enum)
+            %% resp_code, 100 - 599  (short integer)
+            %% resp_status (varchar(20))
+            %% resp_bytes, (unsigned int)
+
+            %% site, (varchar)
+            %% path, (varchar) 
+            %% referer, (varchar)
+
+            %% controller, (varchar)
+            %% dispatch_rule, (varchar)
+            %%
+            %% duration_process, (integer)
+            %% duration_total, (integer)
+
+            %% peer_ip, (varchar?) 
+            %% session_id, (varchar)
+            %% user_id, integer
+            %% user_agent, (varchar)
+            %% timezone, (varchar)
+
+            %% reason, varchar
+
+            %% timestamp
+
+            ok
+    end.
+
+%%
+%% Inet helpers.
+%%
+
+inet_type({_,_,_,_}) -> 4;
+inet_type({_,_,_,_,_,_,_,_}) -> 6.
+
+%% Erlang to network byte order integer
+inet_eton({N1, N2, N3, N4}) ->
+    (N1 bsl 24) +  (N2 bsl 16) + (N3 bsl 8) + N4;
+inet_eton({N1, N2, N3, N4, N5, N6, N7, N8}) ->
+    (N1 bsl 112) + (N2 bsl 96) + (N3 bsl 80) + (N4 bsl 64) + (N5 bsl 48) + (N6 bsl 32) (N7 bsl 16) + N8.
+                                         
+
+%% Ip-address from integer to erlang
+inet_v4_ntoe(Num) ->
+    N1 = (Num band 16#FF000000) bsr 24,
+    N2 = (Num band 16#00FF0000) bsr 16,
+    N3 = (Num band 16#0000FF00) bsr 8,
+    N4 =  Num band 16#000000FF,
+    {N1, N2, N3, N4}.
+
+inet_v6_ntoe(Num) ->
+    N1 = (Num band 16#FFFF_0000_0000_0000_0000_0000_0000_0000) bsr 112,
+    N2 = (Num band 16#0000_FFFF_0000_0000_0000_0000_0000_0000) bsr 96,
+    N3 = (Num band 16#0000_0000_FFFF_0000_0000_0000_0000_0000) bsr 80,
+    N4 = (Num band 16#0000_0000_0000_FFFF_0000_0000_0000_0000) bsr 64,
+    N5 = (Num band 16#0000_0000_0000_0000_FFFF_0000_0000_0000) bsr 48,
+    N6 = (Num band 16#0000_0000_0000_0000_0000_FFFF_0000_0000) bsr 32,
+    N7 = (Num band 16#0000_0000_0000_0000_0000_0000_FFFF_0000) bsr 16,
+    N8 =  Num band 16#0000_0000_0000_0000_0000_0000_0000_FFFF,
+    {N1, N2, N3, N4, N5, N6, N7, N8}.
+
+
 
