@@ -72,7 +72,6 @@ start_link() ->
 
 %% @doc Store a log entry in the database
 log(#http_log_access{}=Log) ->
-    % ?DEBUG(Log),
     gen_statem:call(?MODULE, {log, Log}).
 
 %% @doc Get a connection to the database.
@@ -85,7 +84,7 @@ get_connection() ->
 %%
 
 init([]) ->
-    ?DEBUG(init),
+    process_flag(trap_exit, true),
     {ok, initialising, #data{}}. 
 
 callback_mode() ->
@@ -94,8 +93,9 @@ callback_mode() ->
 code_change(_Vsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
-terminate(Reason, _StateName, _Data) ->
-    ?DEBUG({terminate, Reason}),
+terminate(_Reason, _StateName, #data{ database = Database, connection = Connection } ) ->
+    ok = educkdb:disconnect(Connection),
+    ok = educkdb:close(Database),
     ok.
 
 %%
@@ -104,8 +104,6 @@ terminate(Reason, _StateName, _Data) ->
 
 %% Initialise the database and schema
 initialising(enter, _OldState, Data) ->
-    ?DEBUG({enter_initialising, Data}),
-
     %% [todo] Use a proper location via config.
     {ok, DB} = educkdb:open("ducklog.db"),
     {ok, Conn} = educkdb:connect(DB),
@@ -192,7 +190,6 @@ initialising(EventType, EventContent, Data) ->
 
 %% Clean, and waiting for input
 clean(enter, _OldState, Data) ->
-    %?DEBUG({enter_clean, Data}),
     {next_state, clean, Data};
 clean({call, From}, {log, #http_log_access{}=A}, #data{connection=Conn}=Data) ->
     %% Create the appender, and go to buffering state.
@@ -214,23 +211,19 @@ buffering(enter, _OldState, Data) ->
     %% Create the appender.
     
     %% Set a timeout to flush... 
-    % ?DEBUG({enter_buffering, Data}),
     {next_state, buffering, Data, [{state_timeout, 2000, flush}]};
 
 buffering({call, From}, {log, #http_log_access{}=A}, #data{appender=Appender, nr_buffered = Count}=Data) ->
-    ?DEBUG({log, Count }),
     gen_statem:reply(From, append(Appender, A)),
     Count1 = Count + 1,
     case Count1 >= ?MAX_BUFFERED of
        true -> 
-            % ?DEBUG({go_to_flushing, max}),
             {next_state, flushing, Data#data{ nr_buffered = Count1 }};
        false ->
             {next_state, buffering, Data#data{ nr_buffered = Count1 }}
     end;
 
 buffering(state_timeout, flush, Data) ->
-    % ?DEBUG({go_to_flushing, timeout}),
     {next_state, flushing, Data};
 
 buffering(EventType, EventContent, Data) ->
@@ -242,7 +235,6 @@ buffering(EventType, EventContent, Data) ->
 
 %% Flush the appender and move to clean state.
 flushing(enter, _OldState, #data{appender=Appender}=Data) ->
-    ?DEBUG({enter_flusing, Data}),
     ok = educkdb:appender_flush(Appender),
     %% Drop the reference to the appender
     {next_state, flushing, Data#data{ appender=undefined }, [{state_timeout, 0, flushed}]};
@@ -270,7 +262,8 @@ append(Appender, #http_log_access{timestamp=Ts,
 
     append_value(Appender, maps:get(req_bytes, Metrics, undefined)),
 
-    append_value(Appender, StatusCategory),
+    ok = educkdb:append_uint8(Appender, status_category_to_uint8(StatusCategory)),
+
     append_value(Appender, Status),
     append_value(Appender, maps:get(resp_bytes, Metrics, undefined)),
 
@@ -308,13 +301,6 @@ append(Appender, #http_log_access{timestamp=Ts,
 append_value(Appender, undefined) ->
     ok = educkdb:append_null(Appender);
 
-%% Response code class
-append_value(Appender, '1xx') -> ok = educkdb:append_uint8(Appender, 1);
-append_value(Appender, '2xx') -> ok = educkdb:append_uint8(Appender, 2);
-append_value(Appender, '3xx') -> ok = educkdb:append_uint8(Appender, 3);
-append_value(Appender, '4xx') -> ok = educkdb:append_uint8(Appender, 4);
-append_value(Appender, '5xx') -> ok = educkdb:append_uint8(Appender, 5);
-
 %% IP Addresses
 append_value(Appender, {_,_,_,_}=Ipv4) ->
     ok = educkdb:append_varchar(Appender, inet:ntoa(Ipv4));
@@ -345,6 +331,9 @@ handle_event(EventType, EventContent, StateName, Data) ->
                   content => EventContent,
                   state => StateName} ),
     {keep_state, Data}.
+
+
+
 
 %%
 %% Database Helpers
@@ -393,38 +382,6 @@ ensure_log_table(Conn) ->
                                               
                                               timestamp timestamp
                                          )"),
-
-            %% version, (varchar(10))
-            %% method
-            %%
-            %% req_bytes
-            %%
-            %%
-            %% resp_category, 1xx, 2xx, 3xx, 4xx, 5xx, unknown  (enum)
-            %% resp_code, 100 - 599  (short integer)
-            %% resp_status (varchar(20))
-            %% resp_bytes, (unsigned int)
-
-            %% site, (varchar)
-            %% path, (varchar) 
-            %% referer, (varchar)
-
-            %% controller, (varchar)
-            %% dispatch_rule, (varchar)
-            %%
-            %% duration_process, (integer)
-            %% duration_total, (integer)
-
-            %% peer_ip, (varchar?) 
-            %% session_id, (varchar)
-            %% user_id, integer
-            %% user_agent, (varchar)
-            %% timezone, (varchar)
-
-            %% reason, varchar
-
-            %% timestamp
-
             ok
     end.
 
@@ -461,5 +418,16 @@ inet_v6_ntoe(Num) ->
     N8 =  Num band 16#0000_0000_0000_0000_0000_0000_0000_FFFF,
     {N1, N2, N3, N4, N5, N6, N7, N8}.
 
+%%
+%% Helpers
+%%
+
+status_category_to_uint8('1xx') -> 1;
+status_category_to_uint8('2xx') -> 2;
+status_category_to_uint8('3xx') -> 3;
+status_category_to_uint8('4xx') -> 4;
+status_category_to_uint8('5xx') -> 5;
+status_category_to_uint8('xxx') -> 0;
+status_category_to_uint8(_) -> 16#FF.
 
 
