@@ -107,76 +107,8 @@ initialising(enter, _OldState, Data) ->
     %% [todo] Use a proper location via config.
     {ok, DB} = educkdb:open("ducklog.db"),
     {ok, Conn} = educkdb:connect(DB),
+    ensure_log_table(Conn),
 
-    case table_exists(Conn, <<"access_log">>) of
-       true ->
-            ok;
-       false ->
-            {ok, [], []} = educkdb:squery(Conn, "CREATE TABLE access_log (
-                                              req_version VARCHAR(10),
-                                              req_method VARCHAR(10),
-
-                                              req_bytes UINTEGER,
-
-                                              resp_category UTINYINT,
-                                              resp_code USMALLINT,
-                                              resp_bytes UINTEGER,
-
-                                              site VARCHAR(128),
-                                              path VARCHAR(512),
-                                              referer VARCHAR(512),
-                                            
-                                              controller VARCHAR(128),
-                                              dispatch_rule VARCHAR(128),
-
-                                              duration_process uinteger,
-                                              duration_total uinteger,
-
-                                              peer_ip varchar,
-                                              session_id varchar(50),
-                                              user_id uinteger,
-                                              language varchar(10),
-                                              timezone varchar(64), 
-                                              user_agent varchar,
-                                              
-                                              timestamp timestamp
-                                         )"),
-
-            %% version, (varchar(10))
-            %% method
-            %%
-            %% req_bytes
-            %%
-            %%
-            %% resp_category, 1xx, 2xx, 3xx, 4xx, 5xx, unknown  (enum)
-            %% resp_code, 100 - 599  (short integer)
-            %% resp_status (varchar(20))
-            %% resp_bytes, (unsigned int)
-
-            %% site, (varchar)
-            %% path, (varchar) 
-            %% referer, (varchar)
-
-            %% controller, (varchar)
-            %% dispatch_rule, (varchar)
-            %%
-            %% duration_process, (integer)
-            %% duration_total, (integer)
-
-            %% peer_ip, (varchar?) 
-            %% session_id, (varchar)
-            %% user_id, integer
-            %% user_agent, (varchar)
-            %% timezone, (varchar)
-
-            %% reason, varchar
-
-            %% timestamp
-
-            ok
-    end, 
-
-    %% [TODO] open the database, check schema and move to the right state.
     {next_state, initialising, Data#data{database=DB, connection=Conn}, [{state_timeout, 0, initialised}]};
 initialising(state_timeout, initialised, Data) ->
     {next_state, clean, Data};
@@ -354,33 +286,33 @@ ensure_log_table(Conn) ->
             ok;
        false ->
             {ok, []} = educkdb:squery(Conn, "CREATE TABLE access_log (
-                                              req_version VARCHAR(10),
-                                              req_method VARCHAR(10),
+                                                req_version VARCHAR(10),
+                                                req_method VARCHAR(10),
 
-                                              req_bytes UINTEGER,
+                                                req_bytes UINTEGER,
 
-                                              resp_category UTINYINT,
-                                              resp_code USMALLINT,
-                                              resp_bytes UINTEGER,
+                                                resp_category UTINYINT,
+                                                resp_code USMALLINT,
+                                                resp_bytes UINTEGER,
 
-                                              site VARCHAR(128),
-                                              path VARCHAR(512),
-                                              referer VARCHAR(512),
+                                                site VARCHAR(128),
+                                                path VARCHAR(512),
+                                                referer VARCHAR(512),
                                             
-                                              controller VARCHAR(128),
-                                              dispatch_rule VARCHAR(128),
+                                                controller VARCHAR(128),
+                                                dispatch_rule VARCHAR(128),
 
-                                              duration_process uinteger,
-                                              duration_total uinteger,
+                                                duration_process uinteger,
+                                                duration_total uinteger,
 
-                                              peer_ip varchar,
-                                              session_id varchar(50),
-                                              user_id uinteger,
-                                              language varchar(10),
-                                              timezone varchar(64), 
-                                              user_agent varchar,
+                                                peer_ip varchar,
+                                                session_id varchar(50),
+                                                user_id uinteger,
+                                                language varchar(10),
+                                                timezone varchar(64), 
+                                                user_agent varchar,
                                               
-                                              timestamp timestamp
+                                                timestamp timestamp
                                          )"),
             ok
     end.
