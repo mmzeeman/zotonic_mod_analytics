@@ -285,7 +285,7 @@ ensure_log_table(Conn) ->
        true ->
             ok;
        false ->
-            {ok, []} = educkdb:squery(Conn, "CREATE TABLE access_log (
+            {ok, _} = educkdb:squery(Conn, "CREATE TABLE access_log (
                                                 req_version VARCHAR(10),
                                                 req_method VARCHAR(10),
 
