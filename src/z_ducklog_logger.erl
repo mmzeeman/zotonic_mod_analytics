@@ -94,9 +94,13 @@ code_change(_Vsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
 terminate(_Reason, _StateName, #data{ database = Database, connection = Connection } ) ->
-    ok = educkdb:disconnect(Connection),
-    ok = educkdb:close(Database),
-    ok.
+    case Connection of
+        undefined ->
+            ok;
+        _ ->
+            ok = educkdb:disconnect(Connection),
+            ok = educkdb:close(Database)
+    end.
 
 %%
 %% States
