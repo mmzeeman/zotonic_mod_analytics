@@ -26,6 +26,7 @@
     start_link/0,
     log/1,
     get_connection/0,
+    database_name/0,
 
     inet_type/1,
     inet_v4_ntoe/1,
@@ -58,6 +59,7 @@
 }).
 
 -define(MAX_BUFFERED, 250).
+-define(DATABASE_NAME, "ducklog.db").
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
@@ -66,7 +68,6 @@
 %%
 
 start_link() ->
-    ?DEBUG(start_link),
     gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
@@ -78,6 +79,13 @@ log(#http_log_access{}=Log) ->
 get_connection() ->
     gen_statem:call(?MODULE, get_connection).
 
+database_name() ->
+    case z_config:get(data_dir) of
+        undefined ->
+            ?DATABASE_NAME;
+        DataDir ->
+            filename:join([ DataDir, atom_to_list(node()), ?DATABASE_NAME ])
+    end.
 
 %%
 %% gen_statem callbacks
@@ -108,8 +116,8 @@ terminate(_Reason, _StateName, #data{ database = Database, connection = Connecti
 
 %% Initialise the database and schema
 initialising(enter, _OldState, Data) ->
-    %% [todo] Use a proper location via config.
-    {ok, DB} = educkdb:open("ducklog.db"),
+    DatabaseName = database_name(),
+    {ok, DB} = educkdb:open(DatabaseName),
     {ok, Conn} = educkdb:connect(DB),
     ensure_log_table(Conn),
 
@@ -269,6 +277,9 @@ handle_event(EventType, EventContent, StateName, Data) ->
     {keep_state, Data}.
 
 
+%%
+%% Helpers
+%%
 
 
 %%
