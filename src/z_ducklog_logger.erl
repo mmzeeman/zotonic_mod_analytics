@@ -70,7 +70,6 @@
 start_link() ->
     gen_statem:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-
 %% @doc Store a log entry in the database
 log(#http_log_access{}=Log) ->
     gen_statem:call(?MODULE, {log, Log}).
@@ -217,6 +216,7 @@ append(Appender, #http_log_access{timestamp=Ts,
 
     append_value(Appender, maps:get(controller, M, undefined)),
     append_value(Appender, maps:get(dispatch_rule, M, undefined)),
+    append_value(Appender, maps:get(rsc_id, M, undefined)),
 
     ok = educkdb:append_uint32(Appender, maps:get(duration_process_usec, Metrics, 0)),
     ok = educkdb:append_uint32(Appender, maps:get(duration_total_usec, Metrics, 0)),
@@ -316,6 +316,7 @@ ensure_log_table(Conn) ->
                                             
                                                 controller VARCHAR(128),
                                                 dispatch_rule VARCHAR(128),
+                                                rsc_id uinteger,
 
                                                 duration_process uinteger,
                                                 duration_total uinteger,

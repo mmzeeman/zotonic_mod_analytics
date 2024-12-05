@@ -30,7 +30,7 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
-observe_http_log_access(#http_log_access{} = Log, _Context) ->
+observe_http_log_access(#http_log_access{} = Log, Context) ->
     z_ducklog_logger:log(Log),
     ok.
 
