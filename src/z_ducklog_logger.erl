@@ -289,7 +289,8 @@ handle_event(EventType, EventContent, StateName, Data) ->
 
 table_exists(Conn, Table) ->
     case educkdb:squery(Conn, "PRAGMA show_tables;") of
-        {ok, [ #{ data := ExistingTables, name := <<"name">> } ]} ->
+        {ok, _, Names} ->
+            ExistingTables = [N || {N} <- Names],
             lists:member(Table, ExistingTables);
         {ok, _} ->
             false
@@ -300,7 +301,7 @@ ensure_log_table(Conn) ->
        true ->
             ok;
        false ->
-            {ok, _} = educkdb:squery(Conn, "CREATE TABLE access_log (
+            {ok, _, _} = educkdb:squery(Conn, "CREATE TABLE access_log (
                                                 req_version VARCHAR(10),
                                                 req_method VARCHAR(10),
 
