@@ -18,6 +18,10 @@
 
 -module(z_ducklog).
 
+-include_lib("zotonic_core/include/zotonic.hrl").
+
+
+
 -export([
     q/1,
     q/2
@@ -25,7 +29,8 @@
 
 q(Query) ->
     with_connection(fun(Conn) ->
-                            educkdb:squery(Conn, Query)
+                            {ok, Res} = educkdb:query(Conn, Query),
+                            educkdb:result_extract(Res)
                     end).
 
 q(Query, Args) ->
@@ -60,5 +65,6 @@ with_connection(F) ->
     try
         F(Conn)
     after
-        ok = educkdb:disconnect(Conn)
+        %ok = educkdb:disconnect(Conn)
+        ok
     end.
