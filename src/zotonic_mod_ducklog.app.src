@@ -1,6 +1,6 @@
 {application, zotonic_mod_ducklog, [
     {description, "Log zotonic http request into a duckdb database"},
-    {vsn, "0.4.0"},
+    {vsn, "0.4.1"},
     {registered, []},
     {applications, [kernel, stdlib, zotonic_core, educkdb]},
     {mod, {z_ducklog_app, []}},
