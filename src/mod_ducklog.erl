@@ -21,16 +21,29 @@
 
 -mod_title("Ducklog").
 -mod_description("Log http requests to a duckdb database.").
--mod_depends([]).
+
+-mod_depends([admin]).
 -mod_provides([]).
 
 -export([
-    observe_http_log_access/2
+    observe_http_log_access/2,
+    observe_admin_menu/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
+-include_lib("zotonic_mod_admin/include/admin_menu.hrl").
 
-observe_http_log_access(#http_log_access{} = Log, Context) ->
+observe_http_log_access(#http_log_access{} = Log, _Context) ->
     z_ducklog_logger:log(Log),
     ok.
+
+observe_admin_menu(#admin_menu{}, Acc, Context) ->
+    [
+     #menu_item{id=admin_analytics,
+                parent=admin_system,
+                label=?__("Analytics", Context),
+                url={admin_analytics, []},
+                visiblecheck={acl, use, mod_ducklog}}
+     |Acc].
+
 

@@ -29,8 +29,12 @@
 
 q(Query) ->
     with_connection(fun(Conn) ->
-                            {ok, Res} = educkdb:query(Conn, Query),
-                            educkdb:result_extract(Res)
+                            case educkdb:query(Conn, Query) of
+                                {ok, Res} ->
+                                    educkdb:result_extract(Res);
+                                {error, {result, Reason}}=E ->
+                                    {error, Reason}
+                            end
                     end).
 
 q(Query, Args) ->
@@ -65,6 +69,5 @@ with_connection(F) ->
     try
         F(Conn)
     after
-        %ok = educkdb:disconnect(Conn)
-        ok
+        ok = educkdb:disconnect(Conn)
     end.
