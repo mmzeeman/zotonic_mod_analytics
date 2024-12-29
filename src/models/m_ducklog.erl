@@ -31,7 +31,8 @@
 
     peer_ip_analytics/3,
     controller_health/3,
-    dispatch_rule_health/3
+    dispatch_rule_health/3,
+    user_activity/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -42,6 +43,9 @@ m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
     {ok, {dispatch_rule_health(1,2, Context), Rest}};
 m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
     {ok, {popular_pages(1,2, Context), Rest}};
+m_get([<<"user_activity">> | Rest], _Msg, Context) ->
+    {ok, {user_activity(1,2, Context), Rest}};
+
 
 m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
@@ -70,10 +74,17 @@ unique_visitors(From, To, Context) ->
 popular_pages(_From, _To, Context) ->
     Site = z_context:site(Context),
 
-    Q = <<"SELECT path, count(*), count(distinct session_id), count(distinct user_id) from access_log
-           WHERE path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
+    Q = <<"SELECT
+    path, count(*), count(distinct session_id), count(distinct user_id)
+FROM
+    access_log
+WHERE path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
            AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/')
-           GROUP BY path ORDER BY COUNT(distinct session_id) DESC LIMIT 10">>,
+GROUP BY
+    path
+ORDER BY
+    COUNT(distinct session_id) DESC
+LIMIT 10">>,
 
     case z_ducklog:q(Q) of
         {ok, _, Data} ->
@@ -86,7 +97,17 @@ popular_pages(_From, _To, Context) ->
 popular_resources(_From, _To, Context) ->
     Site = z_context:site(Context),
 
-    Q = <<"SELECT rsc_id, count(*) from access_log WHERE rsc_id IS NOT NULL GROUP BY rsc_id ORDER BY COUNT(*) DESC LIMIT 10">>,
+    Q = <<"SELECT
+    rsc_id, count(*)
+FROM
+    access_log
+WHERE
+    rsc_id IS NOT NULL
+GROUP BY
+    rsc_id
+ORDER BY
+    COUNT(*) DESC
+LIMIT 10">>,
 
     case z_ducklog:q(Q) of
         {ok, _, Data} ->
@@ -125,7 +146,7 @@ LIMIT 100">>,
             []
     end.
 
-controller_health(_From, _To, Context) ->
+controller_health(_From, _To, _Context) ->
     Q = <<"
     SELECT 
     controller,
@@ -134,7 +155,7 @@ controller_health(_From, _To, Context) ->
     COUNT(CASE WHEN resp_code >= 400 THEN 1 END) AS error_requests,
     (COUNT(CASE WHEN resp_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) AS error_rate_percentage,
     AVG(duration_total) AS avg_response_time_ms,
-    MEAN(duration_total) AS mean_response_time_ms
+    GEOMEAN(duration_total) AS mean_response_time_ms
 FROM 
     access_log
 GROUP BY 
@@ -150,7 +171,7 @@ ORDER BY
             []
     end.
 
-dispatch_rule_health(_From, _To, Context) ->
+dispatch_rule_health(_From, _To, _Context) ->
     Q = <<"
     SELECT 
     dispatch_rule,
@@ -159,7 +180,7 @@ dispatch_rule_health(_From, _To, Context) ->
     COUNT(CASE WHEN resp_code >= 400 THEN 1 END) AS error_requests,
     (COUNT(CASE WHEN resp_code >= 400 THEN 1 END) * 100.0 / COUNT(*)) AS error_rate_percentage,
     AVG(duration_total) AS avg_response_time_ms,
-    MEAN(duration_total) AS mean_response_time_ms
+    GEOMEAN(duration_total) AS mean_response_time_ms
 FROM 
     access_log
 GROUP BY 
@@ -175,4 +196,33 @@ ORDER BY
             []
     end.
 
+user_activity(_From, _To, Context) ->
+    Q = <<"SELECT 
+    user_id,
+    COUNT(DISTINCT session_id) AS session_count,
+    COUNT(*) AS total_requests,
+    COUNT(CASE WHEN req_method = 'POST' THEN 1 END) AS post_actions,
+    AVG(duration_total) AS avg_response_time_ms,
+    GEOMEAN(duration_total) AS mean_response_time_ms,
+    MIN(timestamp) AS first_activity,
+    MAX(timestamp) AS last_activity,
+    ARRAY_AGG(DISTINCT peer_ip) AS ips,
+    ARRAY_AGG(DISTINCT rsc_id) FILTER (WHERE rsc_id IS NOT NULL) AS rsc,
+FROM 
+    access_log
+WHERE 
+    user_id IS NOT NULL
+GROUP BY 
+    user_id
+ORDER BY 
+    total_requests DESC
+LIMIT 20; -- Adjust limit as needed">>,
+
+    case z_ducklog:q(Q) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get user activity analytics">>, reason => Reason }),
+            []
+    end.
 
