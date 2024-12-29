@@ -38,7 +38,7 @@
                 <td>{{ avg | round }}</td>
                 <td>{{ mean | round }}</td>
                 <td>{{ date_first }} - {{ date_last }}</td>
-                <td>{{ ips }}, </td>
+                <td>{% for ip in ips %}{{ ip }}, {% endfor %}</td>
                 <td>{% for id in rsc %}{{ id.title | default:id }}, {% endfor %}</td>
             </tr>
         {% endfor %}

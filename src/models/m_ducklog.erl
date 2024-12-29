@@ -75,7 +75,9 @@ popular_pages(_From, _To, Context) ->
     Site = z_context:site(Context),
 
     Q = <<"SELECT
-    path, count(*), count(distinct session_id), count(distinct user_id)
+    path,
+    count(*),
+    count(distinct session_id),count(distinct user_id)
 FROM
     access_log
 WHERE path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
