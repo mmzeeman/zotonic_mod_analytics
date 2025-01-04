@@ -32,7 +32,7 @@ q(Query) ->
                             case educkdb:query(Conn, Query) of
                                 {ok, Res} ->
                                     educkdb:result_extract(Res);
-                                {error, {result, Reason}}=E ->
+                                {error, {result, Reason}} ->
                                     {error, Reason}
                             end
                     end).
@@ -44,7 +44,19 @@ q(Query, Args) ->
                             educkdb:execute(Prepared)
                     end).
 
-bind_all(PreparedStatement, Args) ->
+bind_all(PreparedStatement, Map) when is_map(Map) ->
+    bind_all(PreparedStatement, maps:to_list(Map));
+bind_all(_PreparedStatement, []) ->
+    ok;
+bind_all(PreparedStatement, [{Name, Value} | Rest]) ->
+    case educkdb:parameter_index(PreparedStatement, Name) of
+        none ->
+            bind_all(PreparedStatement, Rest);
+        Index ->
+            ok = bind(PreparedStatement, Index, Value),
+            bind_all(PreparedStatement, Rest)
+    end;
+bind_all(PreparedStatement, Args) when is_list(Args) ->
     bind_all(PreparedStatement, Args, 1).
 
 
@@ -54,6 +66,12 @@ bind_all(Stmt, [Elt | Rest], I) ->
     ok = bind(Stmt, I, Elt),
     bind_all(Stmt, Rest, I+1).
 
+bind(Stmt, I, {{_,_,_},{_,_,_}}=DateTime) ->
+    educkdb:bind_timestamp(Stmt, I, DateTime);
+bind(Stmt, I, Atom) when is_atom(Atom) ->
+    educkdb:bind_varchar(Stmt, I, z_convert:to_binary(Atom));
+bind(Stmt, I, Bin) when is_binary(Bin) ->
+    educkdb:bind_varchar(Stmt, I, Bin);
 bind(Stmt, I, Elt) when is_boolean(Elt) ->
     educkdb:bind_boolean(Stmt, I, Elt);
 bind(Stmt, I, Elt) when is_float(Elt) ->

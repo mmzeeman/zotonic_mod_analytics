@@ -31,39 +31,76 @@
 
     peer_ip_analytics/3,
     controller_health/3,
-    dispatch_rule_health/3,
-    user_activity/3
+
+    dispatch_rule_health/1, dispatch_rule_health/3,
+    user_activity/1, user_activity/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 m_get([<<"unique_visitors">> | Rest], _Msg, Context) ->
-    {ok, {unique_visitors(1,2, Context), Rest}};
+    {ok, {unique_visitors(Context), Rest}};
 m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
-    {ok, {dispatch_rule_health(1,2, Context), Rest}};
+    {ok, {dispatch_rule_health(Context), Rest}};
 m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
-    {ok, {popular_pages(1,2, Context), Rest}};
+
+    {ok, {popular_pages(Context), Rest}};
+
 m_get([<<"user_activity">> | Rest], _Msg, Context) ->
-    {ok, {user_activity(1,2, Context), Rest}};
+    {ok, {user_activity(Context), Rest}};
 
 
 m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
 
-unique_visitors(From, To, Context) ->
-    _Site = z_context:site(Context),
+unique_visitors(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    unique_visitors(From, To, Context).
 
-    _Period = <<"select unnest(range(timestamp '2024-12-13', timestamp '2024-12-14', interval 1 hour)) as period">>,
+unique_visitors(From, Until, Context) ->
+    Site = z_context:site(Context),
 
-    Q = <<"WITH date_series AS (
-               SELECT unnest(range(TIMESTAMP '2024-12-1', TIMESTAMP '2024-12-30', INTERVAL 1 day)) AS period
-          )
-          SELECT date_trunc('day', ds.period) as day, count(DISTINCT session_id) as unique FROM date_series ds LEFT JOIN access_log
-          ON datetrunc('day', timestamp) = datetrunc('day', ds.period)
-          WHERE site = 'site_cafe' GROUP BY ds.period ORDER BY ds.period;">>,
+    Q1 = <<"
+WITH
+    date_series AS (
+        SELECT unnest(
+            range(
+                date_trunc('day', $from::timestamp),
+                date_trunc('day', $until::timestamp),
+                INTERVAL 1 day
+            )) AS day
+    ),
+    unique_sessions AS (
+        SELECT
+            date_trunc('day', timestamp) AS day,
+            count(DISTINCT session_id) AS unique
+        FROM
+            access_log
+        WHERE
+            site = $site
+            AND timestamp >= $from
+            AND timestamp <= $until
+        GROUP BY
+            day
+    )
+SELECT
+    ds.day,
+    COALESCE(us.unique, 0) AS unique
+FROM
+    date_series ds
+LEFT JOIN
+    unique_sessions us
+ON
+    ds.day == us.day
+ORDER BY
+    ds.day;
+">>,
 
-    case z_ducklog:q(Q) of
+    case z_ducklog:q(Q1, #{ from => From,
+                            until => Until,
+                            site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -71,24 +108,34 @@ unique_visitors(From, To, Context) ->
             []
     end.
 
-popular_pages(_From, _To, Context) ->
+popular_pages(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    popular_pages(From, To, Context).
+
+popular_pages(From, Until, Context) ->
     Site = z_context:site(Context),
 
-    Q = <<"SELECT
+    Q = <<"
+SELECT
     path,
     count(*),
     count(distinct session_id),count(distinct user_id)
 FROM
     access_log
-WHERE path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
-           AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/')
+WHERE
+    path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
+    AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/')
+    AND site = $site
+    AND timestamp >= $from
+    AND timestamp <= $until
 GROUP BY
     path
 ORDER BY
     COUNT(distinct session_id) DESC
 LIMIT 10">>,
 
-    case z_ducklog:q(Q) of
+    case z_ducklog:q(Q, #{ from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -96,7 +143,7 @@ LIMIT 10">>,
             []
     end.
 
-popular_resources(_From, _To, Context) ->
+popular_resources(From, Until, Context) ->
     Site = z_context:site(Context),
 
     Q = <<"SELECT
@@ -105,13 +152,16 @@ FROM
     access_log
 WHERE
     rsc_id IS NOT NULL
+    AND site == $site
+    AND timestamp >= $from
+    AND timestamp <= $until
 GROUP BY
     rsc_id
 ORDER BY
     COUNT(*) DESC
 LIMIT 10">>,
 
-    case z_ducklog:q(Q) of
+    case z_ducklog:q(Q, #{ site => Site, from => From, until => Until } ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -119,8 +169,8 @@ LIMIT 10">>,
             []
     end.
 
-peer_ip_analytics(_From, _To, Context) ->
-    _Site = z_context:site(Context),
+peer_ip_analytics(From, Until, Context) ->
+    Site = z_context:site(Context),
 
     Q = <<"SELECT 
     peer_ip,
@@ -134,13 +184,19 @@ peer_ip_analytics(_From, _To, Context) ->
     COUNT(CASE WHEN resp_code >= 400 THEN 1 END) * 100.0 / COUNT(*) AS error_rate_percentage
 FROM 
     access_log
+WHERE
+    site == $site
+    AND timestamp > $from
+    AND timestamp < $until
 GROUP BY 
     peer_ip
 ORDER BY 
     request_count DESC
 LIMIT 100">>,
 
-    case z_ducklog:q(Q) of
+    case z_ducklog:q(Q, #{ from => From,
+                           until => Until,
+                           site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -148,7 +204,7 @@ LIMIT 100">>,
             []
     end.
 
-controller_health(_From, _To, _Context) ->
+controller_health(From, Until, Context) ->
     Q = <<"
     SELECT 
     controller,
@@ -160,12 +216,19 @@ controller_health(_From, _To, _Context) ->
     GEOMEAN(duration_total) AS mean_response_time_ms
 FROM 
     access_log
+WHERE
+    site == $site
+    AND timestamp > $from
+    AND timestamp < $until
 GROUP BY 
     controller
 ORDER BY 
     total_requests DESC;">>,
 
-    case z_ducklog:q(Q) of
+    Site = z_context:site(Context),
+    case z_ducklog:q(Q, #{ from => From,
+                           until => Until,
+                           site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -173,7 +236,13 @@ ORDER BY
             []
     end.
 
-dispatch_rule_health(_From, _To, _Context) ->
+dispatch_rule_health(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    dispatch_rule_health(From, To, Context).
+
+dispatch_rule_health(From, Until, Context) ->
+    Site = z_context:site(Context),
     Q = <<"
     SELECT 
     dispatch_rule,
@@ -185,12 +254,18 @@ dispatch_rule_health(_From, _To, _Context) ->
     GEOMEAN(duration_total) AS mean_response_time_ms
 FROM 
     access_log
+WHERE
+    timestamp < $until
+    AND timestamp > $from
+    AND site == $site
 GROUP BY 
     dispatch_rule 
 ORDER BY 
     total_requests DESC;">>,
 
-    case z_ducklog:q(Q) of
+    case z_ducklog:q(Q, #{ site => Site,
+                           from => From,
+                           until => Until } ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -198,8 +273,14 @@ ORDER BY
             []
     end.
 
-user_activity(_From, _To, Context) ->
-    Q = <<"SELECT 
+user_activity(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    user_activity(From, To, Context).
+
+user_activity(From, Until, Context) ->
+    Q = <<"
+SELECT 
     user_id,
     COUNT(DISTINCT session_id) AS session_count,
     COUNT(*) AS total_requests,
@@ -214,13 +295,20 @@ FROM
     access_log
 WHERE 
     user_id IS NOT NULL
+    AND timestamp < $until
+    AND timestamp > $from
+    AND site == $site
 GROUP BY 
     user_id
 ORDER BY 
     total_requests DESC
-LIMIT 20; -- Adjust limit as needed">>,
+LIMIT 20;">>,
 
-    case z_ducklog:q(Q) of
+    Site = z_context:site(Context),
+    case z_ducklog:q(Q, #{from => From,
+                          until => Until,
+                          site => Site
+                         }) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
