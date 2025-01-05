@@ -32,8 +32,12 @@
     peer_ip_analytics/3,
     controller_health/3,
 
+    page_views/1, sessions/1, 
+
     dispatch_rule_health/1, dispatch_rule_health/3,
-    user_activity/1, user_activity/3
+    user_activity/1, user_activity/3,
+
+    sparkline/1
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -43,16 +47,80 @@ m_get([<<"unique_visitors">> | Rest], _Msg, Context) ->
 m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
     {ok, {dispatch_rule_health(Context), Rest}};
 m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
-
     {ok, {popular_pages(Context), Rest}};
-
 m_get([<<"user_activity">> | Rest], _Msg, Context) ->
     {ok, {user_activity(Context), Rest}};
-
+m_get([<<"page_views">> | Rest], _Msg, Context) ->
+    {ok, {page_views(Context), Rest}};
+m_get([<<"sessions">> | Rest], _Msg, Context) ->
+    {ok, {sessions(Context), Rest}};
+m_get([<<"sparkline">> | Rest], _Msg, Context) ->
+    {ok, {sparkline([20,25,170,4,5,6,7,8,9,10,11,12,13,14,15, 16,17,18,19,20,21,22,23,24,25,26,26,28,29,30]), Rest}};
 
 m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
+
+page_views(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    page_views(From, Until, Context).
+
+page_views(From, Until, Context) -> 
+    Site = z_context:site(Context),
+
+    Q = <<"
+SELECT
+    count(*)
+FROM
+    access_log
+WHERE
+    rsc_id IS NOT NULL
+    AND site == $site
+    AND timestamp >= $from
+    AND timestamp <= $until
+">>,
+
+    case z_ducklog:q(Q, #{ from => From,
+                           until => Until,
+                           site => Site} ) of
+        {ok, _, [{Count}]} ->
+            Count;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get page view count">>, reason => Reason }),
+            []
+    end.
+
+sessions(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    sessions(From, Until, Context).
+
+sessions(From, Until, Context) -> 
+    Site = z_context:site(Context),
+
+    Q = <<"
+SELECT
+    count(distinct session_id)
+FROM
+    access_log
+WHERE
+    session_id IS NOT NULL
+    AND site == $site
+    AND timestamp >= $from
+    AND timestamp <= $until
+">>,
+
+    case z_ducklog:q(Q, #{ from => From,
+                           until => Until,
+                           site => Site} ) of
+        {ok, _, [{Count}]} ->
+            Count;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get page view count">>, reason => Reason }),
+            []
+    end.
+
 
 unique_visitors(Context) ->
     To = z_datetime:to_datetime(<<"now">>),
@@ -316,3 +384,7 @@ LIMIT 20;">>,
             []
     end.
 
+sparkline(Numbers) ->
+    Min = lists:min(Numbers),
+    Max = lists:max(Numbers),
+    unicode:characters_to_binary([round((Value - Min) / (Max - Min) * 7 + 16#2581) || Value <- Numbers]).
