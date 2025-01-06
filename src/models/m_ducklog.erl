@@ -35,9 +35,7 @@
     page_views/1, sessions/1, 
 
     dispatch_rule_health/1, dispatch_rule_health/3,
-    user_activity/1, user_activity/3,
-
-    sparkline/1
+    user_activity/1, user_activity/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -54,9 +52,6 @@ m_get([<<"page_views">> | Rest], _Msg, Context) ->
     {ok, {page_views(Context), Rest}};
 m_get([<<"sessions">> | Rest], _Msg, Context) ->
     {ok, {sessions(Context), Rest}};
-m_get([<<"sparkline">> | Rest], _Msg, Context) ->
-    {ok, {sparkline([20,25,170,4,5,6,7,8,9,10,11,12,13,14,15, 16,17,18,19,20,21,22,23,24,25,26,26,28,29,30]), Rest}};
-
 m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
@@ -121,7 +116,6 @@ WHERE
             []
     end.
 
-
 unique_visitors(Context) ->
     To = z_datetime:to_datetime(<<"now">>),
     From = z_datetime:prev_day(To, 30),
@@ -134,7 +128,7 @@ unique_visitors(From, Until, Context) ->
 WITH
     date_series AS (
         SELECT unnest(
-            range(
+            generate_series(
                 date_trunc('day', $from::timestamp),
                 date_trunc('day', $until::timestamp),
                 INTERVAL 1 day
@@ -383,8 +377,3 @@ LIMIT 20;">>,
             ?LOG_WARNING(#{ text => <<"Could not get user activity analytics">>, reason => Reason }),
             []
     end.
-
-sparkline(Numbers) ->
-    Min = lists:min(Numbers),
-    Max = lists:max(Numbers),
-    unicode:characters_to_binary([round((Value - Min) / (Max - Min) * 7 + 16#2581) || Value <- Numbers]).
