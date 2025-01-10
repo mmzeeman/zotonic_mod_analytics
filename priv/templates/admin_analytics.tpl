@@ -11,7 +11,17 @@
 
 <div class="analytics-panels">
 
-    {% with m.ducklog.user_activity as user_activity %}
+    <div>
+    {% with m.ducklog.stats_overview as stats_overview %}
+        {% include "_sparkline.tpl" values = (stats_overview | values:2) show_last=true %} Requests <br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:3) show_last=true %} Resources Visited<br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:4) show_last=true %} Users<br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:5) show_last=true %} Sessions<br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:6) show_last=true %} Data Out<br/>
+    {% endwith %}
+    </div>
+
+    {% with m.ducklog.user_activity  as user_activity %}
     <table class="table table-condensed">
         <thead>
             <tr>

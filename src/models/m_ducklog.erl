@@ -25,7 +25,8 @@
 ]).
 
 -export([
-    unique_visitors/3,
+    stats_overview/1, stats_overview/3,
+    unique_visitors/1, unique_visitors/3,
     popular_pages/3,
     popular_resources/3,
 
@@ -40,6 +41,8 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
+m_get([<<"stats_overview">> | Rest], _Msg, Context) ->
+    {ok, {stats_overview(Context), Rest}};
 m_get([<<"unique_visitors">> | Rest], _Msg, Context) ->
     {ok, {unique_visitors(Context), Rest}};
 m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
@@ -116,10 +119,73 @@ WHERE
             []
     end.
 
+stats_overview(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    stats_overview(From, To, Context).
+
+stats_overview(From, Until, Context) ->
+    Site = z_context:site(Context),
+
+    Q1 = <<"
+WITH
+    date_series AS (
+        SELECT unnest(
+            generate_series(
+                date_trunc('day', $from::timestamp),
+                date_trunc('day', $until::timestamp),
+                INTERVAL 1 day
+            )) AS day
+    ),
+    unique_sessions AS (
+        SELECT
+            date_trunc('day', timestamp) AS day,
+            count(*) AS requests, 
+            count(DISTINCT rsc_id) AS rscs, 
+            count(DISTINCT user_id) AS users, 
+            count(DISTINCT session_id) AS sessions,
+            (sum(resp_bytes) / 1048576)::uinteger AS resp_mbs
+        FROM
+            access_log
+        WHERE
+            site = $site
+            AND timestamp >= $from
+            AND timestamp <= $until
+        GROUP BY
+            day
+    )
+SELECT
+    ds.day,
+    COALESCE(us.requests, 0) AS requests,
+    COALESCE(us.rscs, 0) AS rscs,
+    COALESCE(us.users, 0) AS users,
+    COALESCE(us.sessions, 0) AS sessions,
+    COALESCE(us.resp_mbs, 0) AS resp_mbs
+FROM
+    date_series ds
+LEFT JOIN
+    unique_sessions us
+ON
+    ds.day == us.day
+ORDER BY
+    ds.day;
+">>,
+
+    case z_ducklog:q(Q1, #{ from => From,
+                            until => Until,
+                            site => Site} ) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
+            []
+    end.
+
 unique_visitors(Context) ->
     To = z_datetime:to_datetime(<<"now">>),
     From = z_datetime:prev_day(To, 30),
     unique_visitors(From, To, Context).
+
 
 unique_visitors(From, Until, Context) ->
     Site = z_context:site(Context),

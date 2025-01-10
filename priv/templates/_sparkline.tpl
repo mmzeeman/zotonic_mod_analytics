@@ -1,4 +1,5 @@
 {% with values | length as length %}
+{% with max | default:(values | max_value) as max %}
 <svg style="{% if show_last %}padding-right: 2.4px; {% endif %}{% if show_first %}padding-left: 2.4px; {% endif %}overflow: visible"] 
      xmlns="http://www.w3.org/2000/svg"
      height="25px" width="80px"
@@ -24,4 +25,5 @@
               vector-effect="non-scaling-stroke" />
     {% endif %}
 </svg>
+{% endwith %}
 {% endwith %}
