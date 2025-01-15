@@ -1,8 +1,8 @@
 {% with values | length as length %}
 {% with max | default:(values | max_value) as max %}
-<svg style="{% if show_last %}padding-right: 2.4px; {% endif %}{% if show_first %}padding-left: 2.4px; {% endif %}overflow: visible"] 
+<svg style="vertical-align: middle; {% if show_last %}padding-right: 2.4px; {% endif %}{% if show_first %}padding-left: 2.4px; {% endif %}overflow: visible"
      xmlns="http://www.w3.org/2000/svg"
-     height="25px" width="80px"
+     height="1em" width="{{ 3 * length }}px"
      viewBox="0 0 {{ length - 1 }} {{ max }}" preserveAspectRatio="none">
     <path d="M{% for v in values %} {{ forloop.counter0 }} {{ max - v }}{% endfor %}"
           stroke-width="1.2"
