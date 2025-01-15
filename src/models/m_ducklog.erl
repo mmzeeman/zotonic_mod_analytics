@@ -144,7 +144,9 @@ WITH
             count(DISTINCT rsc_id) AS rscs, 
             count(DISTINCT user_id) AS users, 
             count(DISTINCT session_id) AS sessions,
-            (sum(resp_bytes) / 1048576)::uinteger AS resp_mbs
+            (sum(resp_bytes) / 1048576)::uinteger AS resp_mbs,
+            count(CASE WHEN resp_code >= 400 AND resp_code < 500 THEN 1 END) as client_errors,
+            count(CASE WHEN resp_code >= 500 THEN 1 END) as server_errors 
         FROM
             access_log
         WHERE
@@ -160,7 +162,9 @@ SELECT
     COALESCE(us.rscs, 0) AS rscs,
     COALESCE(us.users, 0) AS users,
     COALESCE(us.sessions, 0) AS sessions,
-    COALESCE(us.resp_mbs, 0) AS resp_mbs
+    COALESCE(us.resp_mbs, 0) AS resp_mbs,
+    COALESCE(us.client_errors, 0) AS client_errors,
+    COALESCE(us.server_errors, 0) AS server_errors 
 FROM
     date_series ds
 LEFT JOIN

@@ -13,11 +13,14 @@
 
     <div>
     {% with m.ducklog.stats_overview as stats_overview %}
+        {# A bit weird.. duckdb retrieves data in columns, it is transposed, and now I transpose it back #}
         {% include "_sparkline.tpl" values = (stats_overview | values:2) show_last=true %} Requests <br/>
         {% include "_sparkline.tpl" values = (stats_overview | values:3) show_last=true %} Resources Visited<br/>
         {% include "_sparkline.tpl" values = (stats_overview | values:4) show_last=true %} Users<br/>
         {% include "_sparkline.tpl" values = (stats_overview | values:5) show_last=true %} Sessions<br/>
         {% include "_sparkline.tpl" values = (stats_overview | values:6) show_last=true %} Data Out<br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:7) show_last=true %} Client Errors (40x)<br/>
+        {% include "_sparkline.tpl" values = (stats_overview | values:8) show_last=true %} Server Errors (50x)<br/>
     {% endwith %}
     </div>
 
