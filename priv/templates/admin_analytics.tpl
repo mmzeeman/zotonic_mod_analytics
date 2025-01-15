@@ -44,15 +44,15 @@
         </thead>
         {% for user, session_count, requests, posts, avg, mean, date_first, date_last, ips, rsc in user_activity %}
             <tr>
-                <td>{{ user.title | default:user  }}</td>
+                <td>{{ user.title | default:(m.identity[user].username) | default:user  }}</td>
                 <td>{{ session_count }}</td>
                 <td>{{ requests }}</td>
                 <td>{{ posts }}</td>
                 <td>{{ avg | round }}</td>
                 <td>{{ mean | round }}</td>
                 <td>{{ date_first }} - {{ date_last }}</td>
-                <td>{% for ip in ips %}{{ ip }}, {% endfor %}</td>
-                <td>{% for id in rsc %}{{ id.title | default:id }}, {% endfor %}</td>
+                <td>{{ ips | length }}</td>
+                <td>{{ rsc | length }}</td>
             </tr>
         {% endfor %}
     </table>
