@@ -27,8 +27,11 @@
 -export([
     stats_overview/1, stats_overview/3,
     unique_visitors/1, unique_visitors/3,
+
     popular_pages/3,
     popular_resources/3,
+
+    erroring_pages/1, erroring_pages/3,
 
     peer_ip_analytics/3,
     controller_health/3,
@@ -237,6 +240,40 @@ ORDER BY
             Data;
         {error, Reason} ->
             ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
+            []
+    end.
+
+erroring_pages(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    erroring_pages(From, To, Context).
+
+erroring_pages(From, Until, Context) ->
+    Site = z_context:site(Context),
+
+    Q = <<"
+SELECT
+    path,
+    count(*),
+    count(distinct session_id),count(distinct user_id)
+FROM
+    access_log
+WHERE
+    resp_code >= 500
+    AND site = $site
+    AND timestamp >= $from
+    AND timestamp <= $until
+GROUP BY
+    path
+ORDER BY
+    COUNT(distinct session_id) DESC
+LIMIT 10">>,
+
+    case z_ducklog:q(Q, #{ from => From, until => Until, site => Site} ) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get erroring pages">>, reason => Reason }),
             []
     end.
 
