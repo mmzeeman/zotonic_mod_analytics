@@ -14,13 +14,27 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-8">
+        <button id="rsc-stats-details-btn" class="btn btn-default btn-xs pull-right">
+            {_ Show details _}
+        </button>
+        {% wire id="rsc-stats-details-btn"
+                action={dialog_open title=_"Details"
+                                    template="_dialog_admin_rsc_stat_details.tpl"
+                                    id=id
+                       }
+        %}
+
         <ul class="list-unstyled pull-right">
-            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:2) title=_"Hits" %}
-            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:3) title=_"Sessions" %}
-            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:4) title=_"Users" %}
+            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:2) title=_"Hits" %}</li>
+            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:3) title=_"Sessions" %}</li>
+            <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:4) title=_"Users" %}</li>
         </ul>
+
     </div>
 </div>
+
+
+
 {% endwith %}
 {% endblock %}
