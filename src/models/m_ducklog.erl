@@ -1,5 +1,5 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
-%% @copyright 2024 Maas-Maarten Zeeman
+%% @copyright 2024-2025 Maas-Maarten Zeeman
 %% @doc API to view statistics of a site. 
 
 %% Copyright 2024 Maas-Maarten Zeeman
@@ -26,6 +26,7 @@
 
 -export([
     stats_overview/1, stats_overview/3,
+    rsc_stats_overview/2, rsc_stats_overview/4,
     unique_visitors/1, unique_visitors/3,
 
     popular_pages/3,
@@ -44,8 +45,12 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
+%% TODO add access control to the api.
+
 m_get([<<"stats_overview">> | Rest], _Msg, Context) ->
     {ok, {stats_overview(Context), Rest}};
+m_get([<<"rsc_stats_overview">>, Rsc | Rest], _Msg, Context) ->
+    {ok, {rsc_stats_overview(Rsc, Context), Rest}};
 m_get([<<"unique_visitors">> | Rest], _Msg, Context) ->
     {ok, {unique_visitors(Context), Rest}};
 m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
@@ -122,6 +127,7 @@ WHERE
             []
     end.
 
+
 stats_overview(Context) ->
     To = z_datetime:to_datetime(<<"now">>),
     From = z_datetime:prev_day(To, 30),
@@ -187,6 +193,70 @@ ORDER BY
             ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
             []
     end.
+
+rsc_stats_overview(Rsc, Context) ->
+    Id = m_rsc:rid(Rsc, Context),
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    rsc_stats_overview(Id, From, To, Context).
+
+rsc_stats_overview(Id, From, Until, Context) ->
+    Site = z_context:site(Context),
+
+    Q1 = <<"
+WITH
+    date_series AS (
+        SELECT unnest(
+            generate_series(
+                date_trunc('day', $from::timestamp),
+                date_trunc('day', $until::timestamp),
+                INTERVAL 1 day
+            )) AS day
+    ),
+    rsc_stats AS (
+        SELECT
+            date_trunc('day', timestamp) AS day,
+            count(*) AS requests, 
+            count(DISTINCT session_id) AS sessions,
+            count(DISTINCT user_id) AS users
+        FROM
+            access_log
+        WHERE
+            site = $site
+            AND rsc_id = $id
+            AND timestamp >= $from
+            AND timestamp <= $until
+        GROUP BY
+            day
+    )
+SELECT
+    ds.day,
+    COALESCE(rs.requests, 0) AS requests,
+    COALESCE(rs.sessions, 0) AS sessions,
+    COALESCE(rs.users, 0) AS users
+FROM
+    date_series ds
+LEFT JOIN
+    rsc_stats rs
+ON
+    ds.day == rs.day
+ORDER BY
+    ds.day;
+">>,
+
+    case z_ducklog:q(Q1, #{ id => Id, 
+                            from => From,
+                            until => Until,
+                            site => Site} ) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get rsc_stats overview">>,
+                            id => Id,
+                            reason => Reason }),
+            []
+    end.
+
 
 unique_visitors(Context) ->
     To = z_datetime:to_datetime(<<"now">>),

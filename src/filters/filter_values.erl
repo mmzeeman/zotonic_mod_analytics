@@ -7,6 +7,8 @@
 values(List, _Context) ->
     values1(List, 2, []).
 
+values(undefined, _N, _Context) ->
+    [];
 values(List, N, _Context) ->
     values1(List, N, []).
 

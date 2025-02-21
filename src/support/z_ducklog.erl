@@ -68,6 +68,10 @@ bind_all(Stmt, [Elt | Rest], I) ->
 
 bind(Stmt, I, {{_,_,_},{_,_,_}}=DateTime) ->
     educkdb:bind_timestamp(Stmt, I, DateTime);
+
+bind(Stmt, I, Int) when is_integer(Int) ->
+    educkdb:bind_int64(Stmt, I, Int);
+
 bind(Stmt, I, Atom) when is_atom(Atom) ->
     educkdb:bind_varchar(Stmt, I, z_convert:to_binary(Atom));
 bind(Stmt, I, Bin) when is_binary(Bin) ->
