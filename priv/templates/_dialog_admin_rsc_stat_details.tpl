@@ -3,16 +3,16 @@
     <thead>
         <tr>
             <td>{_ Path _}</td>
-            <td>{_ Hits _}</td>
-            <td>{_ Visitors _}</td>
+            <td>{_ Views _}</td>
+            <td>{_ Sessions _}</td>
             <td>{_ Users _}</td>
         </tr>
     </thead>
-    {% for page, hits, visitors, users in pages %}
+    {% for page, views, sessions, users in pages %}
         <tr>
             <td>{{ page| escape }}</td>
-            <td>{{ hits }}</td>
-            <td>{{ visitors }}</td>
+            <td>{{ views }}</td>
+            <td>{{ sessions }}</td>
             <td>{{ users }}</td>
         </tr>
     {% endfor %}
