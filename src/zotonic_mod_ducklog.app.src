@@ -1,12 +1,12 @@
 {application, zotonic_mod_ducklog, [
     {description, "Log zotonic http request into a duckdb database"},
-    {vsn, "0.4.1"},
+    {vsn, "0.5.1"},
     {registered, []},
     {applications, [kernel, stdlib, zotonic_core, educkdb]},
     {mod, {z_ducklog_app, []}},
     {env, []},
     {modules, []},
     {maintainers, []},
-    {licenses, ["Apache 2.0"]},
+    {licenses, ["Apache-2.0"]},
     {links, [{"GitHub", "https://github.com/mmzeeman/zotonic_mod_ducklog"}]}
 ]}.
