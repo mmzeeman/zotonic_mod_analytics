@@ -2,7 +2,7 @@
 %% @copyright 2022-2024 Maas-Maarten Zeeman
 %% @doc An access logger writes log entries to a duckdb database.
 
-%% Copyright 2022 Maas-Maarten Zeeman
+%% Copyright 2022-2025 Maas-Maarten Zeeman
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -39,9 +39,13 @@ q(Query) ->
 
 q(Query, Args) ->
     with_connection(fun(Conn) ->
-                            {ok, Prepared} = educkdb:prepare(Conn, Query),
-                            ok = bind_all(Prepared, Args),
-                            educkdb:execute(Prepared)
+                            case educkdb:prepare(Conn, Query) of
+                                {ok, Prepared} ->
+                                    ok = bind_all(Prepared, Args),
+                                    educkdb:execute(Prepared);
+                                {error, _}=Error ->
+                                    Error
+                            end
                     end).
 
 bind_all(PreparedStatement, Map) when is_map(Map) ->

@@ -213,10 +213,17 @@ append(Appender, #http_log_access{timestamp=Ts,
     append_value(Appender, maps:get(site, Metrics, undefined)),
     append_value(Appender, maps:get(path, Metrics, undefined)),
     case maps:find(qs, Metrics) of
-        {ok, Qs} when size(Qs) > 0 -> append_value(Appender, Qs);
-        {ok, _} -> append_value(Appender, undefined);
-        error -> append_value(Appender, undefined)
+        {ok, Qs} when size(Qs) > 0 ->
+            ?DEBUG({Method, maps:get(path, Metrics, undefined), Qs}),
+            append_value(Appender, Qs);
+        {ok, _} ->
+            ?DEBUG({Method, maps:get(path, Metrics, undefined)}),
+            append_value(Appender, undefined);
+        error ->
+            append_value(Appender, undefined)
     end,
+
+
 
     append_value(Appender, maps:get(referer, Metrics, undefined)),
 

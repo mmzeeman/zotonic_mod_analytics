@@ -66,6 +66,9 @@ m_get([<<"popular_pages">>, Rsc | Rest], _Msg, Context) ->
 m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
     {ok, {popular_pages(Context), Rest}};
 
+m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
+    {ok, {popular_referrers(Rsc, Context), Rest}};
+
 m_get([<<"user_activity">> | Rest], _Msg, Context) ->
     {ok, {user_activity(Context), Rest}};
 m_get([<<"page_views">> | Rest], _Msg, Context) ->
@@ -430,6 +433,45 @@ LIMIT 10">>,
             []
     end.
 
+popular_referrers(Rsc, Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    popular_referrers(Rsc, From, To, Context).
+
+popular_referrers(Rsc, From, Until, Context) ->
+    Id = m_rsc:rid(Rsc, Context),
+    Site = z_context:site(Context),
+
+    Q = <<"
+SELECT
+    referer,
+    count(*)
+FROM
+    access_log
+WHERE
+    rsc_id = $id
+    AND referer IS NOT NULL
+    AND resp_code = 200
+    AND site = $site
+    AND timestamp >= $from
+    AND timestamp <= $until
+GROUP BY
+    referer 
+ORDER BY
+    COUNT(*) DESC,
+    referer 
+LIMIT 10">>,
+
+    case z_ducklog:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get popular referrer">>,
+                            id => Id,
+                            reason => Reason }),
+            []
+    end.
+
 
 popular_resources(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -456,7 +498,6 @@ LIMIT 10">>,
             ?LOG_WARNING(#{ text => <<"Could not get popular resources">>, reason => Reason }),
             []
     end.
-
 
 
 peer_ip_analytics(From, Until, Context) ->
