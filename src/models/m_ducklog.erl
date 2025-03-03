@@ -33,7 +33,7 @@
 
     popular_rsc_pages/2,
 
-    popular_resources/3,
+    popular_resources/1, popular_resources/3,
 
     erroring_pages/1, erroring_pages/3,
 
@@ -63,14 +63,19 @@ m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
 
 m_get([<<"popular_pages">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_rsc_pages(Rsc, Context), Rest}};
+
 m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
     {ok, {popular_pages(Context), Rest}};
+
+m_get([<<"popular_resources">> | Rest], _Msg, Context) ->
+    {ok, {popular_resources(Context), Rest}};
 
 m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_referrers(Rsc, Context), Rest}};
 
 m_get([<<"user_activity">> | Rest], _Msg, Context) ->
     {ok, {user_activity(Context), Rest}};
+
 m_get([<<"page_views">> | Rest], _Msg, Context) ->
     {ok, {page_views(Context), Rest}};
 m_get([<<"sessions">> | Rest], _Msg, Context) ->
@@ -377,14 +382,16 @@ FROM
     access_log
 WHERE
     path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
-    AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/')
+    AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/' OR path ^@ '/fileuploader/')
+    AND resp_code = 200
     AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
 GROUP BY
     path
 ORDER BY
-    COUNT(distinct session_id) DESC
+    COUNT(*) DESC,
+    path
 LIMIT 10">>,
 
     case z_ducklog:q(Q, #{ from => From, until => Until, site => Site} ) of
@@ -472,23 +479,32 @@ LIMIT 10">>,
             []
     end.
 
+popular_resources(Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    popular_resources(From, To, Context).
 
 popular_resources(From, Until, Context) ->
     Site = z_context:site(Context),
 
     Q = <<"SELECT
-    rsc_id, count(*)
+    rsc_id,
+    count(*),
+    count(distinct session_id),
+    count(distinct user_id)
 FROM
     access_log
 WHERE
     rsc_id IS NOT NULL
+    AND resp_code = 200
     AND site == $site
     AND timestamp >= $from
     AND timestamp <= $until
 GROUP BY
     rsc_id
 ORDER BY
-    COUNT(*) DESC
+    COUNT(*) DESC,
+    rsc_id
 LIMIT 10">>,
 
     case z_ducklog:q(Q, #{ site => Site, from => From, until => Until } ) of

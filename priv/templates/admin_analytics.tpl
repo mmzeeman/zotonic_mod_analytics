@@ -87,8 +87,6 @@
     </table>
     {% endwith %}
 
-
-
     {% with m.ducklog.unique_visitors as visitors %}
     <table class="table table-condensed">
         <thead>
@@ -106,27 +104,48 @@
     </table>
     {% endwith %}
 
-    
     {% with m.ducklog.popular_pages as popular %}
     <table class="table table-condensed">
         <thead>
             <tr>
                 <td>{_ Path _}</td>
-                <td>{_ Hits _}</td>
-                <td>{_ Visitors _}</td>
+                <td>{_ Views _}</td>
+                <td>{_ Sessions _}</td>
                 <td>{_ Users _}</td>
             </tr>
         </thead>
-        {% for path, hits, visitors, users in popular %}
+        {% for path, views, sessions, users in popular %}
         <tr>
             <td>{{ path | escape }}</td>
-            <td>{{ hits }}</td>
-            <td>{{ visitors }}</td>
+            <td>{{ views }}</td>
+            <td>{{ sessions }}</td>
             <td>{{ users }}</td>
         </tr>
         {% endfor %}
     </table>
     {% endwith %}
+
+    {% with m.ducklog.popular_resources as popular %}
+    <table class="table table-condensed">
+        <thead>
+            <tr>
+                <td>{_ Resource _}</td>
+                <td>{_ Views _}</td>
+                <td>{_ Sessions _}</td>
+                <td>{_ Users _}</td>
+            </tr>
+        </thead>
+        {% for id, views, sessions, users in popular %}
+        <tr>
+            <td>{{ id.title | default:id }}</td>
+            <td>{{ views }}</td>
+            <td>{{ sessions }}</td>
+            <td>{{ users }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endwith %}
+
 </div>
 
 {% endblock %}

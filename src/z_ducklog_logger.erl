@@ -1,8 +1,8 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
-%% @copyright 2022 Maas-Maarten Zeeman
+%% @copyright 2022-2025 Maas-Maarten Zeeman
 %% @doc An access logger writes log entries to a duckdb database.
 
-%% Copyright 2022 Maas-Maarten Zeeman
+%% Copyright 2022-2025 Maas-Maarten Zeeman
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -213,17 +213,10 @@ append(Appender, #http_log_access{timestamp=Ts,
     append_value(Appender, maps:get(site, Metrics, undefined)),
     append_value(Appender, maps:get(path, Metrics, undefined)),
     case maps:find(qs, Metrics) of
-        {ok, Qs} when size(Qs) > 0 ->
-            ?DEBUG({Method, maps:get(path, Metrics, undefined), Qs}),
-            append_value(Appender, Qs);
-        {ok, _} ->
-            ?DEBUG({Method, maps:get(path, Metrics, undefined)}),
-            append_value(Appender, undefined);
-        error ->
-            append_value(Appender, undefined)
+        {ok, Qs} when size(Qs) > 0 -> append_value(Appender, Qs);
+        {ok, _} -> append_value(Appender, undefined);
+        error -> append_value(Appender, undefined)
     end,
-
-
 
     append_value(Appender, maps:get(referer, Metrics, undefined)),
 
@@ -246,7 +239,9 @@ append(Appender, #http_log_access{timestamp=Ts,
 
     append_value(Appender, maps:get(language, Metrics, undefined)),
     append_value(Appender, maps:get(timezone, Metrics, undefined)),
+
     append_value(Appender, maps:get(user_agent, Metrics, undefined)),
+
     append_value(Appender, Ts),
 
     ok = educkdb:appender_end_row(Appender).
@@ -289,16 +284,9 @@ handle_event(EventType, EventContent, StateName, Data) ->
                   state => StateName} ),
     {keep_state, Data}.
 
-
-%%
-%% Helpers
-%%
-
-
 %%
 %% Database Helpers
 %%
-
 
 table_exists(Conn, Table) ->
     case educkdb:squery(Conn, "PRAGMA show_tables;") of
