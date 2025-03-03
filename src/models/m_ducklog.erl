@@ -73,6 +73,9 @@ m_get([<<"popular_resources">> | Rest], _Msg, Context) ->
 m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_referrers(Rsc, Context), Rest}};
 
+m_get([<<"access_log">>, Rsc | Rest], _Msg, Context) ->
+    {ok, {access_log(Rsc, Context), Rest}};
+
 m_get([<<"user_activity">> | Rest], _Msg, Context) ->
     {ok, {user_activity(Context), Rest}};
 
@@ -478,6 +481,58 @@ LIMIT 10">>,
                             reason => Reason }),
             []
     end.
+
+access_log(Rsc, Context) ->
+    To = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(To, 30),
+    access_log(Rsc, From, To, Context).
+
+access_log(Rsc, From, Until, Context) ->
+    Id = m_rsc:rid(Rsc, Context),
+    Site = z_context:site(Context),
+
+    Q = <<"
+SELECT
+    req_version,
+    req_method,
+
+    resp_code,
+    path,
+    qs,
+    referer,
+
+    duration_total,
+
+    peer_ip,
+    session_id, 
+    user_id,
+
+    language,
+    timezone,
+    user_agent,
+
+    timestamp
+FROM
+    access_log
+WHERE
+    rsc_id = $id
+    AND site = $site
+    AND timestamp >= $from
+    AND timestamp <= $until
+ORDER BY
+    timestamp DESC
+LIMIT 100">>,
+
+    case z_ducklog:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get access_log">>,
+                            id => Id,
+                            reason => Reason }),
+            []
+    end.
+
 
 popular_resources(Context) ->
     To = z_datetime:to_datetime(<<"now">>),
