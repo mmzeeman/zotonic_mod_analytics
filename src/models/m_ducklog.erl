@@ -381,7 +381,7 @@ SELECT
 FROM
     access_log
 WHERE
-    path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js')
+    path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js', 'robots.txt' )
     AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/' OR path ^@ '/fileuploader/')
     AND resp_code = 200
     AND site = $site
