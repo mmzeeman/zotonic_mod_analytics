@@ -48,6 +48,8 @@
             <td>{_ Path _}</td>
             <td>{_ QS _}</td>
 
+            <td>{_ Referrer _}</td>
+
             <td>{_ Peer _}</td>
             <td>{_ Session Id _}</td>
             <td>{_ User _}</td>
@@ -68,6 +70,8 @@
             <td>{{ resp_code }}</td>
             <td>{{ path | escape }}</td>
             <td>{{ qs | escape }}</td>
+
+            <td>{{ referer | escape }}</td>
 
             <td>{{ peer_ip | escape }}</td>
             <td>{{ session_id | escape }}</td>
