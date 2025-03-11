@@ -243,10 +243,12 @@ WITH
             access_log
         WHERE
             site = $site
+            AND resp_code = 200
             AND rsc_id = $id
             AND timestamp >= $from
             AND timestamp <= $until
-        GROUP BY
+            AND ", (no_bots_clause())/binary,
+"        GROUP BY
             day
     )
 SELECT
@@ -428,7 +430,8 @@ WHERE
     AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
-GROUP BY
+    AND ", (no_bots_clause())/binary,
+"GROUP BY
     url 
 ORDER BY
     COUNT(*) DESC,
@@ -519,7 +522,8 @@ WHERE
     AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
-ORDER BY
+    AND ", (no_bots_clause())/binary,
+"ORDER BY
     timestamp DESC
 LIMIT 100">>,
 
@@ -717,3 +721,11 @@ LIMIT 20;">>,
             ?LOG_WARNING(#{ text => <<"Could not get user activity analytics">>, reason => Reason }),
             []
     end.
+
+no_bots_clause() ->
+    <<"((session_id IS NOT NULL)
+        OR ( (session_id IS NULL)
+             AND user_agent IS NOT NULL
+             AND NOT regexp_matches(user_agent, '(bot|crawler|spider|Googlebot|Bingbot|Yahoo! Slurp|Baiduspider|YandexBot|AhrefsBot|MJ12bot|SemrushBot|DotBot|Sogou|Exabot|facebookexternalhit|Twitterbot|Slackbot|curl/|wget/)', 'i')
+        ))
+    ">>.
