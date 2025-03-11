@@ -33,8 +33,5 @@
 
     </div>
 </div>
-
-
-
 {% endwith %}
 {% endblock %}
