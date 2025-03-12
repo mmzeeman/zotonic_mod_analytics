@@ -17,6 +17,7 @@
     <div class="col-md-8">
         {% wire id="rsc-stats-details-btn"
                 action={dialog_open title=_"Details"
+                                    width=1500
                                     template="_dialog_admin_rsc_stat_details.tpl"
                                     id=id
                        }
