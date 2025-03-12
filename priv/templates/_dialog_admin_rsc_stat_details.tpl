@@ -38,15 +38,14 @@
 
 {% with m.ducklog.access_log[id] as log %}
 <div class="table-responsive" style="max-height: 300px; overflow: scroll;">
-<table class="table table-condensed" style="white-space:nowrap;">
+<table class="table table-condensed table-hover" style="white-space:nowrap;">
     <thead>
         <tr>
             <td>{_ Timestamp _}</td>
 
-            <td>{_ Method _}</td>
+            <td>{_ Req _}</td>
             <td>{_ Code _}</td>
             <td>{_ Path _}</td>
-            <td>{_ QS _}</td>
 
             <td>{_ Referrer _}</td>
 
@@ -64,12 +63,16 @@
            language, timezone, user_agent,
            timestamp in log %}
         <tr>
-            <td>{{ timestamp | date:"c" }}</td>
+            <td>{{ timestamp | date:"y-m-d H:i:s" }}</td>
 
             <td>{{ req_method }}</td>
             <td>{{ resp_code }}</td>
-            <td>{{ path | escape }}</td>
-            <td>{{ qs | escape }}</td>
+
+            {% if not qs %}
+                <td>{{ path | escape }}</td>
+            {% else %}
+                <td>{{ path | escape }}?{{ qs | escape }}</td>
+            {% endif %}
 
             <td>{{ referer | escape }}</td>
 
