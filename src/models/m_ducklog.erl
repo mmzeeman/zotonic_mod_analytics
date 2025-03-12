@@ -726,6 +726,6 @@ no_bots_clause() ->
     <<"((session_id IS NOT NULL)
         OR ( (session_id IS NULL)
              AND user_agent IS NOT NULL
-             AND NOT regexp_matches(user_agent, '(bot|crawler|spider|Googlebot|Bingbot|Yahoo! Slurp|Baiduspider|YandexBot|AhrefsBot|MJ12bot|SemrushBot|DotBot|Sogou|Exabot|facebookexternalhit|Twitterbot|Slackbot|curl/|wget/)', 'i')
+             AND NOT regexp_matches(user_agent, '(bot|crawler|spider|Googlebot|Bingbot|Yahoo! Slurp|Baiduspider|YandexBot|AhrefsBot|MJ12bot|SemrushBot|DotBot|Sogou|Exabot|facebookexternalhit|Twitterbot|Slackbot|GuzzleHttp|HeadlessChrome|python-requests|go-http-client|curl/|wget/)', 'i')
         ))
     ">>.
