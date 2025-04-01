@@ -43,8 +43,6 @@
         <tr>
             <td>{_ Timestamp _}</td>
 
-            <td>{_ Req _}</td>
-            <td>{_ Code _}</td>
             <td>{_ Path _}</td>
 
             <td>{_ Referrer _}</td>
@@ -64,9 +62,6 @@
            timestamp in log %}
         <tr>
             <td>{{ timestamp | date:"y-m-d H:i:s" }}</td>
-
-            <td>{{ req_method }}</td>
-            <td>{{ resp_code }}</td>
 
             {% if not qs %}
                 <td>{{ path | escape }}</td>

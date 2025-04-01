@@ -244,6 +244,7 @@ WITH
         WHERE
             site = $site
             AND resp_code = 200
+            AND req_method = 'GET'
             AND rsc_id = $id
             AND timestamp >= $from
             AND timestamp <= $until
@@ -427,6 +428,7 @@ FROM
 WHERE
     rsc_id = $id
     AND resp_code = 200
+    AND req_method = 'GET'
     AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
@@ -520,6 +522,8 @@ FROM
 WHERE
     rsc_id = $id
     AND site = $site
+    AND resp_code = 200
+    AND req_method = 'GET'
     AND timestamp >= $from
     AND timestamp <= $until
     AND ", (no_bots_clause())/binary,
