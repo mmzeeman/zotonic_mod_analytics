@@ -42,15 +42,11 @@
     <thead>
         <tr>
             <td>{_ Timestamp _}</td>
-
-            <td>{_ Path _}</td>
-
-            <td>{_ Referrer _}</td>
-
             <td>{_ Peer _}</td>
-            <td>{_ Session Id _}</td>
+            <td>{_ Path _}</td>
             <td>{_ User _}</td>
-
+            <td>{_ Session Id _}</td>
+            <td>{_ Referrer _}</td>
             <td>{_ UA _}</td>
         </tr>
     </thead>
@@ -62,6 +58,7 @@
            timestamp in log %}
         <tr>
             <td>{{ timestamp | date:"y-m-d H:i:s" }}</td>
+            <td>{{ peer_ip | escape }}</td>
 
             {% if not qs %}
                 <td>{{ path | escape }}</td>
@@ -69,12 +66,9 @@
                 <td>{{ path | escape }}?{{ qs | escape }}</td>
             {% endif %}
 
-            <td>{{ referer | escape }}</td>
-
-            <td>{{ peer_ip | escape }}</td>
-            <td>{{ session_id | escape }}</td>
             <td>{{ user_id | escape }}</td>
-
+            <td>{{ session_id | escape }}</td>
+            <td>{{ referer | escape }}</td>
             <td>{{ user_agent | escape }}</td>
         </tr>
     {% endfor %}
