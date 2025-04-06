@@ -66,7 +66,7 @@
                 <td>{{ path | escape }}?{{ qs | escape }}</td>
             {% endif %}
 
-            <td>{{ user_id | escape }}</td>
+            <td>{% if user_id %}{% if m.identity[user_id].username as username %}{{ username | escape }}{% else %}{{ user_id }}{% endif %}{% endif %}</td>
             <td>{{ session_id | escape }}</td>
             <td>{{ referer | escape }}</td>
             <td>{{ user_agent | escape }}</td>
