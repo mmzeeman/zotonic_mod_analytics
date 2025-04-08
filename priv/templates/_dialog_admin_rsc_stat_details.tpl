@@ -66,10 +66,10 @@
                 <td>{{ path | escape }}?{{ qs | escape }}</td>
             {% endif %}
 
-            <td>{% if user_id %}{% if m.identity[user_id].username as username %}{{ username | escape }}{% else %}{{ user_id }}{% endif %}{% endif %}</td>
-            <td>{{ session_id | escape }}</td>
+            <td>{% if user_id %}<a href="{% url admin_edit_rsc id=user_id %}">{% if m.identity[user_id].username as username %}{{ username | escape }}{% else %}{{ user_id }}{% endif %}</a>{% endif %}</td>
+            <td>{{ session_id | truncate:8:"" | escape }}</td>
             <td>{{ referer | escape }}</td>
-            <td>{{ user_agent | escape }}</td>
+            <td>{% with user_agent | ua as ua %}{{ ua.browser }} {_ on _} {{ ua.os }}{% endwith %}</td>
         </tr>
     {% endfor %}
 </table>
