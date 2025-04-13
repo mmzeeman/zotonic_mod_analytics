@@ -11,7 +11,7 @@
 
 <div class="analytics-panels">
 
-    {% with m.ducklog.stats_overview as stats_overview %}
+    {% with m.analytics.stats_overview as stats_overview %}
     <ul class="list-unstyled">
         {# A bit weird.. duckdb retrieves data in columns, it is transposed, and now it transposed back again #}
         <li>{% include "_sparkline_with_title.tpl" values = (stats_overview | values:2) title=_"Requests" %}</li>
@@ -24,7 +24,7 @@
     </ul>
     {% endwith %}
 
-    {% with m.ducklog.user_activity  as user_activity %}
+    {% with m.analytics.user_activity  as user_activity %}
     <table class="table table-condensed">
         <thead>
             <tr>
@@ -60,7 +60,7 @@
 
 
 
-    {% with m.ducklog.dispatch_rule_health as health %}
+    {% with m.analytics.dispatch_rule_health as health %}
     <table class="table table-condensed">
         <thead>
             <tr>
@@ -87,7 +87,7 @@
     </table>
     {% endwith %}
 
-    {% with m.ducklog.unique_visitors as visitors %}
+    {% with m.analytics.unique_visitors as visitors %}
     <table class="table table-condensed">
         <thead>
             <tr>
@@ -104,7 +104,7 @@
     </table>
     {% endwith %}
 
-    {% with m.ducklog.popular_pages as popular %}
+    {% with m.analytics.popular_pages as popular %}
     <table class="table table-condensed">
         <thead>
             <tr>
@@ -125,7 +125,7 @@
     </table>
     {% endwith %}
 
-    {% with m.ducklog.popular_resources as popular %}
+    {% with m.analytics.popular_resources as popular %}
     <table class="table table-condensed">
         <thead>
             <tr>

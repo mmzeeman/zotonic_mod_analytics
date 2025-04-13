@@ -1,4 +1,4 @@
--module(z_ducklog_app).
+-module(analytics_app).
 
 -behaviour(application).
 
@@ -16,10 +16,10 @@
 %%====================================================================
 
 start() ->
-    ensure_started(zotonic_mod_ducklog).
+    ensure_started(zotonic_mod_analytics).
 
 start(_StartType, _StartArgs) ->
-    z_ducklog_sup:start_link().
+    analytics_sup:start_link().
 
 %%--------------------------------------------------------------------
 stop(_State) ->

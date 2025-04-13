@@ -1,4 +1,4 @@
-{% with m.ducklog.popular_pages[id] as pages %}
+{% with m.analytics.popular_pages[id] as pages %}
 <table class="table table-condensed">
     <thead>
         <tr>
@@ -19,7 +19,7 @@
 </table>
 {% endwith %}
 
-{% with m.ducklog.popular_referrers[id] as referrer %}
+{% with m.analytics.popular_referrers[id] as referrer %}
 <table class="table table-condensed">
     <thead>
         <tr>
@@ -36,7 +36,7 @@
 </table>
 {% endwith %}
 
-{% with m.ducklog.access_log[id] as log %}
+{% with m.analytics.access_log[id] as log %}
 <div class="table-responsive" style="max-height: 300px; overflow: scroll;">
 <table class="table table-condensed table-hover" style="white-space:nowrap;">
     <thead>

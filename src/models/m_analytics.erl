@@ -2,7 +2,7 @@
 %% @copyright 2024-2025 Maas-Maarten Zeeman
 %% @doc API to view statistics of a site. 
 
-%% Copyright 2024 Maas-Maarten Zeeman
+%% Copyright 2024-2025 Maas-Maarten Zeeman
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
--module(m_ducklog).
+-module(m_analytics).
 -author("Maas-Maarten Zeeman <mmzeeman@xs4all.nl>").
 -behaviour(zotonic_model).
 
@@ -107,7 +107,7 @@ WHERE
     AND timestamp <= $until
 ">>,
 
-    case z_ducklog:q(Q, #{ from => From,
+    case z_duckdb:q(Q, #{ from => From,
                            until => Until,
                            site => Site} ) of
         {ok, _, [{Count}]} ->
@@ -137,7 +137,7 @@ WHERE
     AND timestamp <= $until
 ">>,
 
-    case z_ducklog:q(Q, #{ from => From,
+    case z_duckdb:q(Q, #{ from => From,
                            until => Until,
                            site => Site} ) of
         {ok, _, [{Count}]} ->
@@ -204,7 +204,7 @@ ORDER BY
     ds.day;
 ">>,
 
-    case z_ducklog:q(Q1, #{ from => From,
+    case z_duckdb:q(Q1, #{ from => From,
                             until => Until,
                             site => Site} ) of
         {ok, _, Data} ->
@@ -267,7 +267,7 @@ ORDER BY
     ds.day;
 ">>,
 
-    case z_ducklog:q(Q1, #{ id => Id, 
+    case z_duckdb:q(Q1, #{ id => Id, 
                             from => From,
                             until => Until,
                             site => Site} ) of
@@ -326,7 +326,7 @@ ORDER BY
     ds.day;
 ">>,
 
-    case z_ducklog:q(Q1, #{ from => From,
+    case z_duckdb:q(Q1, #{ from => From,
                             until => Until,
                             site => Site} ) of
         {ok, _, Data} ->
@@ -362,7 +362,7 @@ ORDER BY
     COUNT(distinct session_id) DESC
 LIMIT 10">>,
 
-    case z_ducklog:q(Q, #{ from => From, until => Until, site => Site} ) of
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -400,7 +400,7 @@ ORDER BY
     path
 LIMIT 10">>,
 
-    case z_ducklog:q(Q, #{ from => From, until => Until, site => Site} ) of
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -440,7 +440,7 @@ ORDER BY
     url 
 LIMIT 10">>,
 
-    case z_ducklog:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
+    case z_duckdb:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -477,7 +477,7 @@ ORDER BY
     referer 
 LIMIT 10">>,
 
-    case z_ducklog:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
+    case z_duckdb:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -531,7 +531,7 @@ WHERE
     timestamp DESC
 LIMIT 100">>,
 
-    case z_ducklog:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
+    case z_duckdb:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -570,7 +570,7 @@ ORDER BY
     rsc_id
 LIMIT 10">>,
 
-    case z_ducklog:q(Q, #{ site => Site, from => From, until => Until } ) of
+    case z_duckdb:q(Q, #{ site => Site, from => From, until => Until } ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
@@ -604,7 +604,7 @@ ORDER BY
     request_count DESC
 LIMIT 100">>,
 
-    case z_ducklog:q(Q, #{ from => From,
+    case z_duckdb:q(Q, #{ from => From,
                            until => Until,
                            site => Site} ) of
         {ok, _, Data} ->
@@ -636,7 +636,7 @@ ORDER BY
     total_requests DESC;">>,
 
     Site = z_context:site(Context),
-    case z_ducklog:q(Q, #{ from => From,
+    case z_duckdb:q(Q, #{ from => From,
                            until => Until,
                            site => Site} ) of
         {ok, _, Data} ->
@@ -673,7 +673,7 @@ GROUP BY
 ORDER BY 
     total_requests DESC;">>,
 
-    case z_ducklog:q(Q, #{ site => Site,
+    case z_duckdb:q(Q, #{ site => Site,
                            from => From,
                            until => Until } ) of
         {ok, _, Data} ->
@@ -715,7 +715,7 @@ ORDER BY
 LIMIT 20;">>,
 
     Site = z_context:site(Context),
-    case z_ducklog:q(Q, #{from => From,
+    case z_duckdb:q(Q, #{from => From,
                           until => Until,
                           site => Site
                          }) of

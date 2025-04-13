@@ -1,8 +1,8 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
-%% @copyright 2022-2024 Maas-Maarten Zeeman 
-%% @doc Log http requests to an duckdb olap database.
+%% @copyright 2022-2025 Maas-Maarten Zeeman 
+%% @doc Analytics for Zotonic sites.
 
-%% Copyright 2022-2024 Maas-Maarten Zeeman 
+%% Copyright 2022-2025 Maas-Maarten Zeeman 
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
--module(mod_ducklog).
+-module(mod_analytics).
 -author("Maas-Maarten Zeeman <mmzeeman@xs4all.nl>").
 
--mod_title("Ducklog").
--mod_description("Log http requests to a duckdb database.").
+-mod_title("Analytics").
+-mod_description("Analytics for Zotonic sites.").
 
 -mod_depends([admin]).
 -mod_provides([]).
@@ -34,7 +34,7 @@
 -include_lib("zotonic_mod_admin/include/admin_menu.hrl").
 
 observe_http_log_access(#http_log_access{} = Log, _Context) ->
-    z_ducklog_logger:log(Log),
+    analytics_logger:log(Log),
     ok.
 
 observe_admin_menu(#admin_menu{}, Acc, Context) ->
@@ -45,5 +45,3 @@ observe_admin_menu(#admin_menu{}, Acc, Context) ->
                 url={admin_analytics, []},
                 visiblecheck={acl, use, mod_ducklog}}
      |Acc].
-
-

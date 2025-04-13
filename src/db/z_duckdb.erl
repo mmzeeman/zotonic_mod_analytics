@@ -1,5 +1,5 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
-%% @copyright 2022-2024 Maas-Maarten Zeeman
+%% @copyright 2022-2025 Maas-Maarten Zeeman
 %% @doc An access logger writes log entries to a duckdb database.
 
 %% Copyright 2022-2025 Maas-Maarten Zeeman
@@ -16,11 +16,9 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
--module(z_ducklog).
+-module(z_duckdb).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
-
-
 
 -export([
     q/1,
@@ -91,7 +89,7 @@ bind(Stmt, I, Elt) when is_float(Elt) ->
 %%
 
 with_connection(F) ->
-    {ok, Conn} = z_ducklog_logger:get_connection(),
+    {ok, Conn} = analytics_logger:get_connection(),
     try
         F(Conn)
     after

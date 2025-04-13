@@ -1,0 +1,12 @@
+{application, zotonic_mod_analytics, [
+    {description, "Analytics for Zotonic sites."},
+    {vsn, "0.6.0"},
+    {registered, []},
+    {applications, [kernel, stdlib, zotonic_core, educkdb]},
+    {mod, {analytics_app, []}},
+    {env, []},
+    {modules, []},
+    {maintainers, []},
+    {licenses, ["Apache-2.0"]},
+    {links, [{"GitHub", "https://github.com/mmzeeman/zotonic_mod_analytics"}]}
+]}.

@@ -16,7 +16,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
--module(z_ducklog_logger).
+-module(analytics_logger).
 -author("Maas-Maarten Zeeman <mmzeeman@xs4all.nl>").
 -behaviour(gen_statem).
 

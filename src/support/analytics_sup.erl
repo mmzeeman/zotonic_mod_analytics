@@ -1,8 +1,8 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
 %% @copyright 2022 Maas-Maarren Zeeman
-%% @doc Supervisor ducklog server
+%% @doc Supervisor analytics logger
 
-%% Copyright 2022 Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
+%% Copyright 2022-2025 Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
--module(z_ducklog_sup).
+-module(analytics_sup).
 -author('Maas-Maarten Zeeman <mmzeeman@xs4all.nl>').
 -behaviour(supervisor).
 
@@ -36,8 +36,8 @@ init([]) ->
     },
     Children = [
         #{
-            id => z_ducklog_logger,
-            start => {z_ducklog_logger, start_link, []},
+            id => analytics_logger,
+            start => {analytics_logger, start_link, []},
             restart => permanent,
             type => worker
         }
