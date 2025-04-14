@@ -1,6 +1,6 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
 %% @copyright 2022-2025 Maas-Maarten Zeeman
-%% @doc An access logger writes log entries to a duckdb database.
+%% @doc Interface to duckdb.
 
 %% Copyright 2022-2025 Maas-Maarten Zeeman
 %%
