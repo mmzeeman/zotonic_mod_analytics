@@ -1,6 +1,6 @@
 # Zotonic Module: Analytics (`zotonic_mod_analytics`)
 
-[![Erlang](https://img.shields.io/badge/Erlang-80.3%25-orange)](https://www.erlang.org/)
+[![Erlang](https://img.shields.io/badge/Erlang-80%25-orange)](https://www.erlang.org/)
 
 `zotonic_mod_analytics` is a module designed for capturing and logging Zotonic access metrics. These
 metrics are stored in a [DuckDB](https://duckdb.org/) database, enabling you to build your own DIY analytics platform.
