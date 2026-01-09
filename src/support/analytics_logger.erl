@@ -118,6 +118,10 @@ initialising(enter, _OldState, Data) ->
     DatabaseName = database_name(),
     {ok, DB} = educkdb:open(DatabaseName),
     {ok, Conn} = educkdb:connect(DB),
+
+    {ok, _, _} = educkdb:squery(Conn, "INSTALL core_functions;"),
+    {ok, _, _} = educkdb:squery(Conn, "LOAD core_functions;"),
+
     ensure_log_table(Conn),
 
     {next_state, initialising, Data#data{database=DB, connection=Conn}, [{state_timeout, 0, initialised}]};
