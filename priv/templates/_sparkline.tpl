@@ -1,5 +1,5 @@
 {% with values | length as length %}
-{% with max | default:(values | max_value) as max %}
+{% with max | default:(values | max) as max %}
 <svg style="vertical-align: middle; {% if show_last %}padding-right: 2.4px; {% endif %}{% if show_first %}padding-left: 2.4px; {% endif %}overflow: visible"
      xmlns="http://www.w3.org/2000/svg"
      height="1em" width="{{ 3 * length }}px"

@@ -4,7 +4,9 @@
 -export([values/2, values/3]).
 
 
-values(List, _Context) ->
+values(Map, _Context) when is_map(Map) ->
+    maps:values(Map);
+values(List, _Context) when is_list(List) ->
     values1(List, 2, []).
 
 values(undefined, _N, _Context) ->
