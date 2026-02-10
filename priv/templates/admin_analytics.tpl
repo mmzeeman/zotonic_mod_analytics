@@ -163,7 +163,7 @@
 
     {# Unique Visitors Section #}
     {% with m.analytics.unique_visitors as visitors %}
-    {% with visitors | map:"2" | max as max_sessions %}
+    {% with visitors | values | max as max_sessions %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
@@ -176,7 +176,7 @@
                         <div style="display: flex; flex-direction: column; align-items: center; min-width: 60px;">
                             <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 280px; width: 100%;">
                                 <div style="background-color: #5bc0de; position: relative; width: 100%; 
-                                            height: {% if max_sessions > 0 %}{{ unique_sessions|mul:100|div:max_sessions }}%{% else %}0%{% endif %}; 
+                                            height: {% if max_sessions > 0 %}{{ (unique_sessions * 100) / max_sessions }}%{% else %}0%{% endif %}; 
                                             min-height: 20px; border-radius: 3px 3px 0 0;"
                                      role="progressbar" 
                                      aria-valuenow="{{ unique_sessions }}" 
