@@ -170,26 +170,31 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Unique Visitors _}</h3>
                 </div>
-                <div class="panel-body" style="max-height: 400px; overflow-y: auto; padding: 15px;">
-                    {% for day, unique_sessions in visitors %}
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <div style="width: 120px; font-size: 13px; font-weight: 500;">
-                                {{ day | date:"l j" }}
-                            </div>
-                            <div style="flex: 1; position: relative;">
-                                <div class="progress" style="margin-bottom: 0; height: 24px; background-color: #f5f5f5;">
-                                    <div class="progress-bar progress-bar-info" role="progressbar" 
-                                         aria-valuenow="{{ unique_sessions }}" aria-valuemin="0" aria-valuemax="{{ max_sessions }}"
-                                         style="width: {% if max_sessions > 0 %}{{ unique_sessions|mul:100|div:max_sessions }}%{% else %}0%{% endif %}; 
-                                                line-height: 24px; font-size: 12px; font-weight: 600;">
+                <div class="panel-body" style="max-height: 400px; overflow-x: auto; overflow-y: hidden; padding: 15px;">
+                    <div style="display: flex; align-items: flex-end; justify-content: flex-start; height: 300px; gap: 15px; min-width: fit-content;">
+                        {% for day, unique_sessions in visitors %}
+                        <div style="display: flex; flex-direction: column; align-items: center; min-width: 60px;">
+                            <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 280px; width: 100%;">
+                                <div style="background-color: #5bc0de; position: relative; width: 100%; 
+                                            height: {% if max_sessions > 0 %}{{ unique_sessions|mul:100|div:max_sessions }}%{% else %}0%{% endif %}; 
+                                            min-height: 20px; border-radius: 3px 3px 0 0;"
+                                     role="progressbar" 
+                                     aria-valuenow="{{ unique_sessions }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="{{ max_sessions }}">
+                                    <div style="position: absolute; top: 5px; width: 100%; text-align: center; 
+                                                font-size: 11px; font-weight: 600; color: white;">
                                         {{ unique_sessions }}
                                     </div>
                                 </div>
                             </div>
+                            <div style="margin-top: 8px; font-size: 11px; font-weight: 500; text-align: center; 
+                                        width: 100%; word-wrap: break-word; line-height: 1.2;">
+                                {{ day | date:"D" }}<br>{{ day | date:"j" }}
+                            </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
