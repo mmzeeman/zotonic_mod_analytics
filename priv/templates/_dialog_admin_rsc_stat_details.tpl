@@ -108,9 +108,9 @@
                                         
                                         {# Show date separator when date changes #}
                                         {% if date_changed %}
-                                        <tr class="date-separator">
-                                            <td colspan="7" style="background-color: #f5f5f5; font-weight: bold; padding: 8px 12px; border-top: 2px solid #ddd;">
-                                                {{ timestamp | date:"l, Y-m-d" }}
+                                        <tr class="active">
+                                            <td colspan="7">
+                                                <small><strong class="text-muted">{{ timestamp | date:"l, Y-m-d" }}</strong></small>
                                             </td>
                                         </tr>
                                         {% endif %}
