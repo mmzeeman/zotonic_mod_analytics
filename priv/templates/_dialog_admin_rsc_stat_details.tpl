@@ -104,9 +104,19 @@
                                            duration_total,
                                            peer_ip, session_id, user_id,
                                            language, timezone, user_agent,
-                                           timestamp in log %}
+                                           timestamp, date_changed in log %}
+                                        
+                                        {# Show date separator when date changes #}
+                                        {% if date_changed %}
+                                        <tr class="date-separator">
+                                            <td colspan="7" style="background-color: #f5f5f5; font-weight: bold; padding: 8px 12px; border-top: 2px solid #ddd;">
+                                                {{ timestamp | date:"l, Y-m-d" }}
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        
                                         <tr>
-                                            <td>{{ timestamp | date:"y-m-d H:i:s" }}</td>
+                                            <td>{{ timestamp | date:"H:i:s" }}</td>
                                             <td>{{ peer_ip | escape }}</td>
 
                                             {% if not qs %}

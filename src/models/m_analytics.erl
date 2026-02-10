@@ -497,37 +497,58 @@ access_log(Rsc, From, Until, Context) ->
     Site = z_context:site(Context),
 
     Q = <<"
+WITH log_with_prev_date AS (
+    SELECT
+        req_version,
+        req_method,
+        resp_code,
+        path,
+        qs,
+        referer,
+        duration_total,
+        peer_ip,
+        session_id,
+        user_id,
+        language,
+        timezone,
+        user_agent,
+        timestamp,
+        LAG(CAST(timestamp AS DATE)) OVER (ORDER BY timestamp DESC) AS prev_date
+    FROM
+        access_log
+    WHERE
+        rsc_id = $id
+        AND site = $site
+        AND resp_code = 200
+        AND req_method = 'GET'
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND ", (no_bots_clause())/binary,
+"
+)
 SELECT
     req_version,
     req_method,
-
     resp_code,
     path,
     qs,
     referer,
-
     duration_total,
-
     peer_ip,
-    session_id, 
+    session_id,
     user_id,
-
     language,
     timezone,
     user_agent,
-
-    timestamp
+    timestamp,
+    CASE 
+        WHEN prev_date IS NULL OR CAST(timestamp AS DATE) != prev_date
+        THEN true
+        ELSE false
+    END AS date_changed
 FROM
-    access_log
-WHERE
-    rsc_id = $id
-    AND site = $site
-    AND resp_code = 200
-    AND req_method = 'GET'
-    AND timestamp >= $from
-    AND timestamp <= $until
-    AND ", (no_bots_clause())/binary,
-"ORDER BY
+    log_with_prev_date
+ORDER BY
     timestamp DESC
 LIMIT 100">>,
 
