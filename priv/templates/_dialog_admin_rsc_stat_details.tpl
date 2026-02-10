@@ -107,13 +107,13 @@
                                            timestamp in log %}
                                         
                                         {# Show date separator when date changes #}
-                                        {% if forloop.first or not timestamp|eq_day:forloop.previtem.13 %}
+                                        {% ifchanged timestamp|date:"Y-m-d" %}
                                         <tr class="date-separator">
                                             <td colspan="7" style="background-color: #f5f5f5; font-weight: bold; padding: 8px 12px; border-top: 2px solid #ddd;">
                                                 {{ timestamp | date:"l, Y-m-d" }}
                                             </td>
                                         </tr>
-                                        {% endif %}
+                                        {% endifchanged %}
                                         
                                         <tr>
                                             <td>{{ timestamp | date:"H:i:s" }}</td>
