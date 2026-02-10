@@ -13,6 +13,9 @@
     color: #337ab7;
     transition: color 0.3s ease;
 }
+.analytics-view-count-panel {
+    padding: 20px;
+}
 .analytics-sparkline-item {
     margin-bottom: 10px;
 }
@@ -23,7 +26,7 @@
     <div class="col-md-12">
         <div class="panel panel-info analytics-panel">
             <div class="panel-heading text-center">{_ Total Views _}</div>
-            <div class="panel-body text-center" style="padding: 20px;">
+            <div class="panel-body text-center analytics-view-count-panel">
                 <div class="analytics-view-count" id="viewCount">{{ (stats_overview | values:2) | sum }}</div>
             </div>
         </div>
