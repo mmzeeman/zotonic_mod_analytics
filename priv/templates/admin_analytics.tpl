@@ -183,7 +183,7 @@
                                      aria-valuemin="0" 
                                      aria-valuemax="{{ max_sessions }}">
                                     <div style="position: absolute; top: 5px; width: 100%; text-align: center; 
-                                                font-size: 11px; font-weight: 600; color: white;">
+                                                font-size: 11px; font-weight: 700; color: #2c5d6f;">
                                         {{ unique_sessions }}
                                     </div>
                                 </div>
