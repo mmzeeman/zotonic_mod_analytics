@@ -131,7 +131,7 @@
                                     <th>{_ Total _}</th>
                                     <th>{_ # Successes _}</th>
                                     <th>{_ # Errors _}</th>
-                                    <th>{_ Precentage Faults _}</th>
+                                    <th>{_ Percentage Faults _}</th>
                                     <th>{_ Avg _}</th>
                                     <th>{_ Mean _}</th>
                                 </tr>
