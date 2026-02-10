@@ -516,7 +516,14 @@ SELECT
     timezone,
     user_agent,
 
-    timestamp
+    timestamp,
+    
+    CASE 
+        WHEN LAG(CAST(timestamp AS DATE)) OVER (ORDER BY timestamp DESC) IS NULL 
+             OR CAST(timestamp AS DATE) != LAG(CAST(timestamp AS DATE)) OVER (ORDER BY timestamp DESC)
+        THEN true
+        ELSE false
+    END AS date_changed
 FROM
     access_log
 WHERE
@@ -533,40 +540,13 @@ LIMIT 100">>,
 
     case z_duckdb:q(Q, #{ id => Id, from => From, until => Until, site => Site} ) of
         {ok, _, Data} ->
-            add_date_change_flags(Data);
+            Data;
         {error, Reason} ->
             ?LOG_WARNING(#{ text => <<"Could not get access_log">>,
                             id => Id,
                             reason => Reason }),
             []
     end.
-
-%% @doc Add a date change flag to each row in the access log data
-%% The flag indicates whether the date has changed from the previous row
-add_date_change_flags([]) ->
-    [];
-add_date_change_flags(Data) ->
-    add_date_change_flags(Data, undefined, []).
-
-add_date_change_flags([], _PrevDate, Acc) ->
-    lists:reverse(Acc);
-add_date_change_flags([Row | Rest], PrevDate, Acc) ->
-    % Timestamp is the 14th element (last element in the tuple)
-    Timestamp = element(14, Row),
-    CurrentDate = extract_date(Timestamp),
-    % DateChanged is true when the date differs from the previous row
-    % For the first row (PrevDate = undefined), DateChanged will be true,
-    % which ensures a date separator is shown for the first entry
-    DateChanged = (CurrentDate =/= PrevDate),
-    % Add the date_changed flag as the 15th element
-    NewRow = erlang:append_element(Row, DateChanged),
-    add_date_change_flags(Rest, CurrentDate, [NewRow | Acc]).
-
-%% @doc Extract date part from timestamp for comparison
-extract_date({{Y, M, D}, _Time}) ->
-    {Y, M, D};
-extract_date(_) ->
-    undefined.
 
 
 popular_resources(Context) ->
