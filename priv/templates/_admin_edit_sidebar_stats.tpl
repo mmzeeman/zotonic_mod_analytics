@@ -9,7 +9,7 @@
         <div class="panel panel-default">
             <div class="panel-heading text-center">Total&nbsp;Views</div>
             <div class="panel-body text-center">
-                <h1><span id="viewCount">{{ (stats_overview | values:2) | sum_values }}</span></h1>
+                <h1><span id="viewCount">{{ (stats_overview | values:2) | sum }}</span></h1>
             </div>
         </div>
     </div>
