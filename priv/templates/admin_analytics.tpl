@@ -170,7 +170,7 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Unique Visitors _}</h3>
                 </div>
-                <div class="panel-body" style="max-height: 500px; overflow-y: auto; padding: 15px;">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto; padding: 15px;">
                     {% for day, unique_sessions in visitors %}
                     <div style="margin-bottom: 15px;">
                         <div style="display: flex; align-items: center; margin-bottom: 5px;">
@@ -180,6 +180,7 @@
                             <div style="flex: 1; position: relative;">
                                 <div class="progress" style="margin-bottom: 0; height: 24px; background-color: #f5f5f5;">
                                     <div class="progress-bar progress-bar-info" role="progressbar" 
+                                         aria-valuenow="{{ unique_sessions }}" aria-valuemin="0" aria-valuemax="{{ max_sessions }}"
                                          style="width: {% if max_sessions > 0 %}{{ unique_sessions|mul:100|div:max_sessions }}%{% else %}0%{% endif %}; 
                                                 line-height: 24px; font-size: 12px; font-weight: 600;">
                                         {{ unique_sessions }}
