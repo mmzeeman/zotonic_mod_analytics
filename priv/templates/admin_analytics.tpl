@@ -75,7 +75,7 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ User Activity _}</h3>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
@@ -126,7 +126,7 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Dispatch Rule Health _}</h3>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
@@ -163,35 +163,37 @@
 
     {# Unique Visitors Section #}
     {% with m.analytics.unique_visitors as visitors %}
+    {% with visitors | map:"2" | max as max_sessions %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Unique Visitors _}</h3>
                 </div>
-                <div class="panel-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-condensed">
-                            <thead>
-                                <tr>
-                                    <th>{_ Day _}</th>
-                                    <th>{_ Unique Sessions _}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for day, unique_sessions in visitors %}
-                                    <tr>
-                                        <td>{{ day | date:"l j"}}</td>
-                                        <td>{{ unique_sessions }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <div class="panel-body" style="max-height: 500px; overflow-y: auto; padding: 15px;">
+                    {% for day, unique_sessions in visitors %}
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <div style="width: 120px; font-size: 13px; font-weight: 500;">
+                                {{ day | date:"l j" }}
+                            </div>
+                            <div style="flex: 1; position: relative;">
+                                <div class="progress" style="margin-bottom: 0; height: 24px; background-color: #f5f5f5;">
+                                    <div class="progress-bar progress-bar-info" role="progressbar" 
+                                         style="width: {% if max_sessions > 0 %}{{ unique_sessions|mul:100|div:max_sessions }}%{% else %}0%{% endif %}; 
+                                                line-height: 24px; font-size: 12px; font-weight: 600;">
+                                        {{ unique_sessions }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
+    {% endwith %}
     {% endwith %}
 
     {# Popular Pages Section #}
@@ -202,7 +204,7 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Popular Pages _}</h3>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
@@ -239,7 +241,7 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Popular Resources _}</h3>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
