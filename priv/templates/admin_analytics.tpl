@@ -94,7 +94,11 @@
                             <tbody>
                                 {% for user, session_count, requests, posts, avg, mean, date_first, date_last, ips, rsc in user_activity %}
                                     <tr>
-                                        <td>{{ user.title | default:(m.identity[user].username) | default:user  }}</td>
+                                        <td>
+                                            <a href="{% url admin_edit_rsc id=user %}">
+                                                {{ user.title | default:(m.identity[user].username) | default:user }}
+                                            </a>
+                                        </td>
                                         <td>{{ session_count }}</td>
                                         <td>{{ requests }}</td>
                                         <td>{{ posts }}</td>
