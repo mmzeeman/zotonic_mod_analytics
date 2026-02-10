@@ -554,6 +554,9 @@ add_date_change_flags([Row | Rest], PrevDate, Acc) ->
     % Timestamp is the 14th element (last element in the tuple)
     Timestamp = element(14, Row),
     CurrentDate = extract_date(Timestamp),
+    % DateChanged is true when the date differs from the previous row
+    % For the first row (PrevDate = undefined), DateChanged will be true,
+    % which ensures a date separator is shown for the first entry
     DateChanged = (CurrentDate =/= PrevDate),
     % Add the date_changed flag as the 15th element
     NewRow = erlang:append_element(Row, DateChanged),
