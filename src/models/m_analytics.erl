@@ -124,7 +124,7 @@ FROM
     access_log
 WHERE
     rsc_id IS NOT NULL
-    AND site == $site
+    AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
 ">>,
@@ -154,7 +154,7 @@ FROM
     access_log
 WHERE
     session_id IS NOT NULL
-    AND site == $site
+    AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
 ">>,
@@ -603,7 +603,7 @@ FROM
 WHERE
     rsc_id IS NOT NULL
     AND resp_code = 200
-    AND site == $site
+    AND site = $site
     AND timestamp >= $from
     AND timestamp <= $until
 GROUP BY
@@ -638,7 +638,7 @@ peer_ip_analytics(From, Until, Context) ->
 FROM 
     access_log
 WHERE
-    site == $site
+    site = $site
     AND timestamp > $from
     AND timestamp < $until
 GROUP BY 
@@ -670,7 +670,7 @@ controller_health(From, Until, Context) ->
 FROM 
     access_log
 WHERE
-    site == $site
+    site = $site
     AND timestamp > $from
     AND timestamp < $until
 GROUP BY 
@@ -710,7 +710,7 @@ FROM
 WHERE
     timestamp < $until
     AND timestamp > $from
-    AND site == $site
+    AND site = $site
 GROUP BY 
     dispatch_rule 
 ORDER BY 
@@ -750,7 +750,7 @@ WHERE
     user_id IS NOT NULL
     AND timestamp < $until
     AND timestamp > $from
-    AND site == $site
+    AND site = $site
 GROUP BY 
     user_id
 ORDER BY 
