@@ -35,7 +35,7 @@
                 <g class="horizontal-bar-group">
                     {# Label #}
                     <text x="5" 
-                          y="{{ (y_pos + bar_height) / 2 + 5 }}" 
+                          y="{{ y_pos + bar_height / 2 + 4 }}" 
                           class="horizontal-bar-label"
                           text-anchor="start">
                         {% if label|length > 35 %}
@@ -49,7 +49,7 @@
                     {# Bar #}
                     <rect class="horizontal-bar-rect"
                           x="150" 
-                          y="{{ ((y_pos + bar_height) / 2 - bar_thickness) / 2 }}"
+                          y="{{ y_pos + (bar_height - bar_thickness) / 2 }}"
                           width="{{ bar_width }}"
                           height="{{ bar_thickness }}"
                           fill="{{ bar_color }}"
@@ -60,7 +60,7 @@
                     {# Value label #}
                     {% if display_values %}
                     <text x="{{ bar_width + 155 }}" 
-                          y="{{ (y_pos + bar_height) / 2 + 4 }}" 
+                          y="{{ y_pos + bar_height / 2 + 4 }}" 
                           class="horizontal-bar-value"
                           text-anchor="start">
                         {{ val }}
