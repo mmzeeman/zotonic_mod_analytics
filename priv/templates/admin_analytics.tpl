@@ -22,7 +22,7 @@
             {% with requests_data | length as data_length %}
             {% if data_length > 1 %}
                 {% with requests_data | slice:[0,-2] | last as prev_requests %}
-                {% with prev_requests|gt:0 as has_prev %}
+                {% with prev_requests > 0 as has_prev %}
                 {% if has_prev %}
                     {% with ((current_requests - prev_requests) / prev_requests) * 100|round as change_pct %}
                     {% include "_stat_card.tpl" 

@@ -43,7 +43,7 @@
                 {% with (center - inner_radius) * start_rad|cos as inner_start_y %}
                 {% with (center + inner_radius) * end_rad|sin as inner_end_x %}
                 {% with (center - inner_radius) * end_rad|cos as inner_end_y %}
-                {% with angle|ge:180 as large_arc %}
+                {% with angle >= 180 as large_arc %}
                 
                 <path class="chart-donut-segment"
                       d="M {{ start_x }} {{ start_y }}
