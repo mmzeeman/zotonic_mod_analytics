@@ -71,6 +71,8 @@
                 
                 {% with end_angle as current_angle %}
                 {% endwith %}
+                {% endwith %}
+                {% endwith %}
             {% endfor %}
             {% endwith %}
             
