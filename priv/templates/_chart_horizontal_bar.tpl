@@ -12,7 +12,7 @@
 {% with show_values|default:1 as display_values %}
 {% with data|length as item_count %}
 {% if item_count > 0 %}
-    {% with max_value|default:(data|map:"1"|max) as max_val %}
+    {% with max_value|default:(data|element:2|max) as max_val %}
     {% with chart_height / item_count as bar_height_calc %}
     {% with bar_height_calc|min:50 as bar_height %}
     {% with bar_height * 0.7 as bar_thickness %}

@@ -9,7 +9,7 @@
 {% with show_legend|default:1 as display_legend %}
 {% with data|length as item_count %}
 {% if item_count > 0 %}
-    {% with data|map:"1"|sum as total_value %}
+    {% with data|element:2|sum as total_value %}
     {% if total_value > 0 %}
     {% with chart_size / 2 as center %}
     {% with center * 0.8 as radius %}

@@ -15,7 +15,7 @@
 {% with show_grid|default:1 as display_grid %}
 {% with data|length as item_count %}
 {% if item_count > 0 %}
-    {% with data|map:"1"|max as max_val %}
+    {% with data|element:2|max as max_val %}
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
     {% with chart_area_width / item_count as bar_spacing %}

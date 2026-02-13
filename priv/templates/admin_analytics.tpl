@@ -108,8 +108,8 @@
                 <div class="panel-body">
                     {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
                     {% if hourly_data %}
-                        {% with hourly_data|map:0 as hours %}
-                        {% with hourly_data|map:1 as requests %}
+                        {% with hourly_data|element:1 as hours %}
+                        {% with hourly_data|element:2 as requests %}
                         {% with hours|zip:requests as chart_data %}
                         {% include "_chart_bar.tpl" 
                             data=chart_data 
@@ -166,8 +166,8 @@
                 <div class="panel-body">
                     {% with m.analytics.error_breakdown as error_data %}
                     {% if error_data %}
-                        {% with error_data|map:0 as labels %}
-                        {% with error_data|map:1 as values %}
+                        {% with error_data|element:1 as labels %}
+                        {% with error_data|element:2 as values %}
                         {# Create data with colors for donut chart #}
                         {% with labels|first as label1 %}
                         {% with labels|last as label2 %}
@@ -376,8 +376,8 @@
                 <div class="panel-body">
                     {% if popular %}
                         {# Extract views (second column) for visualization #}
-                        {% with popular|map:0 as paths %}
-                        {% with popular|map:1 as views %}
+                        {% with popular|element:1 as paths %}
+                        {% with popular|element:2 as views %}
                         {% with paths|zip:views as chart_data %}
                         {% include "_chart_horizontal_bar.tpl" 
                             data=chart_data 
@@ -440,8 +440,8 @@
                 <div class="panel-body">
                     {% if popular %}
                         {# Extract resource IDs and views for visualization #}
-                        {% with popular|map:0 as ids %}
-                        {% with popular|map:1 as views %}
+                        {% with popular|element:1 as ids %}
+                        {% with popular|element:2 as views %}
                         {# Create chart data using resource titles #}
                         {% with [] as chart_data_list %}
                         {% for id, view_count in ids|zip:views %}
