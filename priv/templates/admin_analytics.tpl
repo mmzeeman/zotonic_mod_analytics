@@ -2,9 +2,9 @@
 
 {% block title %}{_ Analytics _}{% endblock %}
 
-{% lib "css/analytics.css" %}
-
 {% block content %}
+
+{% lib "css/analytics.css" %}
 
 <div class="admin-header">
     <h2>{_ Analytics _}</h2>
