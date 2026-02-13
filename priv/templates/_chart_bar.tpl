@@ -60,7 +60,7 @@
                 <g class="chart-bar-group">
                     {# Bar #}
                     <rect class="chart-bar"
-                          x="{{ ((x_pos + bar_spacing) / 2 - bar_width) / 2 }}" 
+                          x="{{ x_pos + (bar_spacing - bar_width) / 2 }}" 
                           y="{{ bar_y }}"
                           width="{{ bar_width }}"
                           height="{{ bar_height_calc }}"
@@ -71,7 +71,7 @@
                     
                     {# Value on top #}
                     {% if display_values %}
-                    <text x="{{ (x_pos + bar_spacing) / 2 }}" 
+                    <text x="{{ x_pos + bar_spacing / 2 }}" 
                           y="{{ bar_y - 5 }}" 
                           class="chart-value-text"
                           text-anchor="middle">
@@ -80,11 +80,11 @@
                     {% endif %}
                     
                     {# Label at bottom #}
-                    <text x="{{ (x_pos + bar_spacing) / 2 }}" 
+                    <text x="{{ x_pos + bar_spacing / 2 }}" 
                           y="{{ chart_area_height + 20 }}" 
                           class="chart-axis-text"
                           text-anchor="middle"
-                          transform="rotate(-45, {{ (x_pos + bar_spacing) / 2 }}, {{ chart_area_height + 20 }})">
+                          transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ chart_area_height + 20 }})">
                         {% if label|length > 10 %}
                             {{ label|slice:[0,10] }}...
                             <title>{{ label }}</title>
