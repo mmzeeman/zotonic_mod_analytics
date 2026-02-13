@@ -39,7 +39,7 @@
                           class="horizontal-bar-label"
                           text-anchor="start">
                         {% if label|length > 35 %}
-                            {{ label|slice:"0:35" }}...
+                            {{ label|slice:[0,35] }}...
                             <title>{{ label }}</title>
                         {% else %}
                             {{ label }}

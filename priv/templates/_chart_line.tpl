@@ -90,7 +90,7 @@
                       text-anchor="middle"
                       transform="rotate(-45, {{ x_pos }}, {{ chart_area_height + 20 }})">
                     {% if label|length > 10 %}
-                        {{ label|slice:"0:10" }}...
+                        {{ label|slice:[0,10] }}...
                     {% else %}
                         {{ label }}
                     {% endif %}
