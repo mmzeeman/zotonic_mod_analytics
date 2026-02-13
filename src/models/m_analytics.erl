@@ -797,8 +797,7 @@ hourly_traffic(From, Until, Context) ->
         site = $site
         AND timestamp >= $from
         AND timestamp <= $until
-        AND ", (no_bots_clause())/binary,
-    "
+        AND ", (no_bots_clause())/binary, "
     GROUP BY 
         hour_of_day
     ORDER BY 
@@ -913,8 +912,7 @@ traffic_sources(From, Until, Context) ->
         site = $site
         AND timestamp >= $from
         AND timestamp <= $until
-        AND ", (no_bots_clause())/binary,
-    "
+        AND ", (no_bots_clause())/binary, "
     GROUP BY 
         source
     ORDER BY 
@@ -1003,8 +1001,7 @@ traffic_by_hour_of_day(From, Until, Context) ->
         site = $site
         AND timestamp >= $from
         AND timestamp <= $until
-        AND ", (no_bots_clause())/binary,
-    "
+        AND ", (no_bots_clause())/binary, "
     GROUP BY 
         hour_of_day
     ORDER BY 

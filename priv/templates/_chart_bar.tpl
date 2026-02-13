@@ -45,7 +45,7 @@
                           y="{{ grid_y|add:4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
-                        {{ max_val|sub:max_val|mul:i|div:4|round }}
+                        {{ max_val|mul:3|sub:max_val|mul:i|div:3|round }}
                     </text>
                     {% endwith %}
                 {% endfor %}

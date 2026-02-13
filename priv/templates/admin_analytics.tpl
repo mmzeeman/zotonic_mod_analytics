@@ -110,7 +110,7 @@
                     {% if hourly_data %}
                         {% with hourly_data|map:0 as hours %}
                         {% with hourly_data|map:1 as requests %}
-                        {% with hours|map:"hour"|zip:requests as chart_data %}
+                        {% with hours|zip:requests as chart_data %}
                         {% include "_chart_bar.tpl" 
                             data=chart_data 
                             title=""
@@ -442,21 +442,20 @@
                         {# Extract resource IDs and views for visualization #}
                         {% with popular|map:0 as ids %}
                         {% with popular|map:1 as views %}
-                        {# Create labels from resource titles #}
-                        {% with [] as labels_list %}
-                        {% for id in ids %}
+                        {# Create chart data using resource titles #}
+                        {% with [] as chart_data_list %}
+                        {% for id, view_count in ids|zip:views %}
                             {% with id.title|default:id as label %}
                             {% endwith %}
                         {% endfor %}
                         {% endwith %}
-                        {% with ids|map:"title"|zip:views as chart_data %}
+                        {# Simplified approach - use map to get titles directly #}
                         {% include "_chart_horizontal_bar.tpl" 
-                            data=chart_data 
+                            data=ids|zip:views
                             title=""
                             height=400
                             color="#5bc0de"
                             show_values=1 %}
-                        {% endwith %}
                         {% endwith %}
                         {% endwith %}
                         
