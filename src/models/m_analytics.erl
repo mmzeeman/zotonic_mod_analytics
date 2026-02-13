@@ -43,7 +43,15 @@
     page_views/1, sessions/1, 
 
     dispatch_rule_health/1, dispatch_rule_health/3,
-    user_activity/1, user_activity/3
+    user_activity/1, user_activity/3,
+
+    %% New functions for enhanced dashboard
+    hourly_traffic/1, hourly_traffic/3,
+    response_time_distribution/1, response_time_distribution/3,
+    error_breakdown/1, error_breakdown/3,
+    traffic_sources/1, traffic_sources/3,
+    session_duration_distribution/1, session_duration_distribution/3,
+    traffic_by_hour_of_day/1, traffic_by_hour_of_day/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -83,6 +91,20 @@ m_get([<<"page_views">> | Rest], _Msg, Context) ->
     {ok, {page_views(Context), Rest}};
 m_get([<<"sessions">> | Rest], _Msg, Context) ->
     {ok, {sessions(Context), Rest}};
+
+m_get([<<"hourly_traffic">> | Rest], _Msg, Context) ->
+    {ok, {hourly_traffic(Context), Rest}};
+m_get([<<"response_time_distribution">> | Rest], _Msg, Context) ->
+    {ok, {response_time_distribution(Context), Rest}};
+m_get([<<"error_breakdown">> | Rest], _Msg, Context) ->
+    {ok, {error_breakdown(Context), Rest}};
+m_get([<<"traffic_sources">> | Rest], _Msg, Context) ->
+    {ok, {traffic_sources(Context), Rest}};
+m_get([<<"session_duration_distribution">> | Rest], _Msg, Context) ->
+    {ok, {session_duration_distribution(Context), Rest}};
+m_get([<<"traffic_by_hour_of_day">> | Rest], _Msg, Context) ->
+    {ok, {traffic_by_hour_of_day(Context), Rest}};
+
 m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
@@ -754,3 +776,245 @@ no_bots_clause() ->
              AND NOT regexp_matches(user_agent, '(bot|crawler|spider|Googlebot|Bingbot|Yahoo! Slurp|Baiduspider|YandexBot|AhrefsBot|MJ12bot|SemrushBot|DotBot|Sogou|Exabot|facebookexternalhit|Twitterbot|Slackbot|GuzzleHttp|HeadlessChrome|python-requests|go-http-client|curl/|wget/)', 'i')
         ))
     ">>.
+
+%% New Analytics Functions
+
+%% @doc Get hourly traffic for the last 24 hours
+hourly_traffic(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_hour(Until, 24),
+    hourly_traffic(From, Until, Context).
+
+hourly_traffic(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    SELECT 
+        hour(timestamp) as hour_of_day,
+        count(*) as requests
+    FROM 
+        access_log
+    WHERE 
+        site = $site
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND ", (no_bots_clause())/binary,
+    "
+    GROUP BY 
+        hour_of_day
+    ORDER BY 
+        hour_of_day
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get hourly traffic">>, reason => Reason }),
+            []
+    end.
+
+%% @doc Get response time distribution in buckets
+response_time_distribution(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    response_time_distribution(From, Until, Context).
+
+response_time_distribution(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    SELECT 
+        CASE 
+            WHEN duration_total < 100 THEN '<100ms'
+            WHEN duration_total >= 100 AND duration_total < 500 THEN '100-500ms'
+            WHEN duration_total >= 500 AND duration_total < 1000 THEN '500ms-1s'
+            WHEN duration_total >= 1000 AND duration_total < 3000 THEN '1s-3s'
+            ELSE '>3s'
+        END as bucket,
+        count(*) as count
+    FROM 
+        access_log
+    WHERE 
+        site = $site
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND duration_total IS NOT NULL
+    GROUP BY 
+        bucket
+    ORDER BY 
+        CASE bucket
+            WHEN '<100ms' THEN 1
+            WHEN '100-500ms' THEN 2
+            WHEN '500ms-1s' THEN 3
+            WHEN '1s-3s' THEN 4
+            ELSE 5
+        END
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get response time distribution">>, reason => Reason }),
+            []
+    end.
+
+%% @doc Get error breakdown by type (4xx vs 5xx)
+error_breakdown(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    error_breakdown(From, Until, Context).
+
+error_breakdown(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    SELECT 
+        CASE 
+            WHEN resp_code >= 400 AND resp_code < 500 THEN '4xx Client Errors'
+            WHEN resp_code >= 500 THEN '5xx Server Errors'
+            ELSE 'Other'
+        END as error_type,
+        count(*) as count
+    FROM 
+        access_log
+    WHERE 
+        site = $site
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND resp_code >= 400
+    GROUP BY 
+        error_type
+    ORDER BY 
+        count DESC
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get error breakdown">>, reason => Reason }),
+            []
+    end.
+
+%% @doc Get top traffic sources/referrers
+traffic_sources(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    traffic_sources(From, Until, Context).
+
+traffic_sources(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    SELECT 
+        COALESCE(referer, 'Direct') as source,
+        count(*) as requests
+    FROM 
+        access_log
+    WHERE 
+        site = $site
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND ", (no_bots_clause())/binary,
+    "
+    GROUP BY 
+        source
+    ORDER BY 
+        requests DESC
+    LIMIT 10
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get traffic sources">>, reason => Reason }),
+            []
+    end.
+
+%% @doc Get session duration distribution
+session_duration_distribution(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    session_duration_distribution(From, Until, Context).
+
+session_duration_distribution(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    WITH session_durations AS (
+        SELECT 
+            session_id,
+            (MAX(timestamp) - MIN(timestamp)) as duration_seconds
+        FROM 
+            access_log
+        WHERE 
+            site = $site
+            AND timestamp >= $from
+            AND timestamp <= $until
+            AND session_id IS NOT NULL
+        GROUP BY 
+            session_id
+    )
+    SELECT 
+        CASE 
+            WHEN duration_seconds < 10 THEN '<10s'
+            WHEN duration_seconds >= 10 AND duration_seconds < 60 THEN '10s-1m'
+            WHEN duration_seconds >= 60 AND duration_seconds < 300 THEN '1m-5m'
+            WHEN duration_seconds >= 300 AND duration_seconds < 1800 THEN '5m-30m'
+            ELSE '>30m'
+        END as bucket,
+        count(*) as count
+    FROM 
+        session_durations
+    GROUP BY 
+        bucket
+    ORDER BY 
+        CASE bucket
+            WHEN '<10s' THEN 1
+            WHEN '10s-1m' THEN 2
+            WHEN '1m-5m' THEN 3
+            WHEN '5m-30m' THEN 4
+            ELSE 5
+        END
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get session duration distribution">>, reason => Reason }),
+            []
+    end.
+
+%% @doc Get traffic pattern by hour of day (aggregate)
+traffic_by_hour_of_day(Context) ->
+    Until = z_datetime:to_datetime(<<"now">>),
+    From = z_datetime:prev_day(Until, 30),
+    traffic_by_hour_of_day(From, Until, Context).
+
+traffic_by_hour_of_day(From, Until, Context) ->
+    Site = z_context:site(Context),
+    Q = <<"
+    SELECT 
+        hour(timestamp) as hour_of_day,
+        count(*) as requests,
+        count(DISTINCT session_id) as sessions
+    FROM 
+        access_log
+    WHERE 
+        site = $site
+        AND timestamp >= $from
+        AND timestamp <= $until
+        AND ", (no_bots_clause())/binary,
+    "
+    GROUP BY 
+        hour_of_day
+    ORDER BY 
+        hour_of_day
+    ">>,
+    
+    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Could not get traffic by hour of day">>, reason => Reason }),
+            []
+    end.
