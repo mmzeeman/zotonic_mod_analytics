@@ -15,9 +15,9 @@
 {% if item_count > 0 %}
     {% with data|map:"1"|max as max_val %}
     {% with data|map:"1"|min as min_val %}
-    {% with chart_width|sub:80 as chart_area_width %}
-    {% with chart_height|sub:60 as chart_area_height %}
-    {% with max_val|sub:min_val as value_range %}
+    {% with chart_width - 80 as chart_area_width %}
+    {% with chart_height - 60 as chart_area_height %}
+    {% with max_val - min_val as value_range %}
     
     <div class="chart-container">
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
@@ -40,35 +40,35 @@
             
             {# Grid lines #}
             {% for i in "01234" %}
-                {% with i|mul:chart_area_height|div:4 as grid_y %}
+                {% with (i * chart_area_height) / 4 as grid_y %}
                 <line x1="50" 
                       y1="{{ grid_y }}" 
-                      x2="{{ chart_area_width|add:50 }}" 
+                      x2="{{ chart_area_width + 50 }}" 
                       y2="{{ grid_y }}"
                       class="chart-grid-line" />
                 <text x="45" 
-                      y="{{ grid_y|add:4 }}" 
+                      y="{{ grid_y + 4 }}" 
                       class="chart-axis-text"
                       text-anchor="end">
-                    {{ max_val|sub:value_range|mul:i|div:4|round }}
+                    {{ ((max_val - value_range) * i) / 4|round }}
                 </text>
                 {% endwith %}
             {% endfor %}
             
             {# Build area path #}
-            {% with chart_area_width|div:item_count|sub:1 as x_spacing %}
+            {% with chart_area_width / item_count - 1 as x_spacing %}
             <path class="chart-area"
                   d="M 50,{{ chart_area_height }}
                      {% for label, val in data %}
-                        {% with forloop.counter0|mul:x_spacing|add:50 as x_pos %}
-                        {% with val|sub:min_val|div:value_range|mul:chart_area_height as y_scaled %}
-                        {% with chart_area_height|sub:y_scaled as y_pos %}
+                        {% with forloop.counter0 * x_spacing + 50 as x_pos %}
+                        {% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}
+                        {% with chart_area_height - y_scaled as y_pos %}
                         L {{ x_pos }},{{ y_pos }}
                         {% endwith %}
                         {% endwith %}
                         {% endwith %}
                      {% endfor %}
-                     L {{ chart_area_width|add:50 }},{{ chart_area_height }}
+                     L {{ chart_area_width + 50 }},{{ chart_area_height }}
                      Z"
                   fill="url(#areaGradient)">
                 <title>{{ title|default:_"Area data" }}</title>
@@ -76,20 +76,20 @@
             
             {# Line on top of area #}
             <path class="chart-line"
-                  d="M {% for label, val in data %}{% with forloop.counter0|mul:x_spacing|add:50 as x_pos %}{% with val|sub:min_val|div:value_range|mul:chart_area_height as y_scaled %}{% with chart_area_height|sub:y_scaled as y_pos %}{{ x_pos }},{{ y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
+                  d="M {% for label, val in data %}{% with forloop.counter0 * x_spacing + 50 as x_pos %}{% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}{% with chart_area_height - y_scaled as y_pos %}{{ x_pos }},{{ y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
                   stroke="{{ start_color }}"
                   stroke-width="2"
                   fill="none" />
             
             {# X-axis labels #}
             {% for label, val in data %}
-                {% with forloop.counter0|mul:x_spacing|add:50 as x_pos %}
-                {% if forloop.counter0|divisibleby:item_count|div:5|max:1 %}
+                {% with forloop.counter0 * x_spacing + 50 as x_pos %}
+                {% if forloop.counter0|divisibleby:item_count / 5|max:1 %}
                 <text x="{{ x_pos }}" 
-                      y="{{ chart_area_height|add:20 }}" 
+                      y="{{ chart_area_height + 20 }}" 
                       class="chart-axis-text"
                       text-anchor="middle"
-                      transform="rotate(-45, {{ x_pos }}, {{ chart_area_height|add:20 }})">
+                      transform="rotate(-45, {{ x_pos }}, {{ chart_area_height + 20 }})">
                     {% if label|length > 10 %}
                         {{ label|slice:"0:10" }}...
                     {% else %}
@@ -104,7 +104,7 @@
             {# X-axis #}
             <line x1="50" 
                   y1="{{ chart_area_height }}" 
-                  x2="{{ chart_area_width|add:50 }}" 
+                  x2="{{ chart_area_width + 50 }}" 
                   y2="{{ chart_area_height }}"
                   class="chart-axis-line" />
         </svg>

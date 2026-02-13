@@ -11,9 +11,9 @@
 {% if item_count > 0 %}
     {% with data|map:"1"|sum as total_value %}
     {% if total_value > 0 %}
-    {% with chart_size|div:2 as center %}
-    {% with center|mul:0.8 as radius %}
-    {% with center|mul:0.5 as inner_radius %}
+    {% with chart_size / 2 as center %}
+    {% with center * 0.8 as radius %}
+    {% with center * 0.5 as inner_radius %}
     
     <div class="chart-container">
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
@@ -29,20 +29,20 @@
             {# Calculate and draw segments #}
             {% with 0 as current_angle %}
             {% for label, val, segment_color in data %}
-                {% with val|div:total_value|mul:360 as angle %}
-                {% with current_angle|add:angle as end_angle %}
+                {% with (val / total_value) * 360 as angle %}
+                {% with current_angle + angle as end_angle %}
                 
                 {# Calculate arc path - using approximate circle math #}
-                {% with current_angle|mul:0.0174533 as start_rad %}
-                {% with end_angle|mul:0.0174533 as end_rad %}
-                {% with center|add:radius|mul:start_rad|sin as start_x %}
-                {% with center|sub:radius|mul:start_rad|cos as start_y %}
-                {% with center|add:radius|mul:end_rad|sin as end_x %}
-                {% with center|sub:radius|mul:end_rad|cos as end_y %}
-                {% with center|add:inner_radius|mul:start_rad|sin as inner_start_x %}
-                {% with center|sub:inner_radius|mul:start_rad|cos as inner_start_y %}
-                {% with center|add:inner_radius|mul:end_rad|sin as inner_end_x %}
-                {% with center|sub:inner_radius|mul:end_rad|cos as inner_end_y %}
+                {% with current_angle * 0.0174533 as start_rad %}
+                {% with end_angle * 0.0174533 as end_rad %}
+                {% with (center + radius) * start_rad|sin as start_x %}
+                {% with (center - radius) * start_rad|cos as start_y %}
+                {% with (center + radius) * end_rad|sin as end_x %}
+                {% with (center - radius) * end_rad|cos as end_y %}
+                {% with (center + inner_radius) * start_rad|sin as inner_start_x %}
+                {% with (center - inner_radius) * start_rad|cos as inner_start_y %}
+                {% with (center + inner_radius) * end_rad|sin as inner_end_x %}
+                {% with (center - inner_radius) * end_rad|cos as inner_end_y %}
                 {% with angle|ge:180 as large_arc %}
                 
                 <path class="chart-donut-segment"
@@ -54,7 +54,7 @@
                       fill="{{ segment_color|default:"#5bc0de" }}"
                       stroke="white"
                       stroke-width="2">
-                    <title>{{ label }}: {{ val }} ({{ val|div:total_value|mul:100|round }}%)</title>
+                    <title>{{ label }}: {{ val }} ({{ (val / total_value) * 100|round }}%)</title>
                 </path>
                 
                 {% endwith %}
@@ -76,7 +76,7 @@
             
             {# Center text showing total #}
             <text x="{{ center }}" 
-                  y="{{ center|sub:5 }}" 
+                  y="{{ center - 5 }}" 
                   class="chart-value-text"
                   text-anchor="middle"
                   font-size="24"
@@ -84,7 +84,7 @@
                 {{ total_value }}
             </text>
             <text x="{{ center }}" 
-                  y="{{ center|add:15 }}" 
+                  y="{{ center + 15 }}" 
                   class="chart-axis-text"
                   text-anchor="middle"
                   font-size="12">

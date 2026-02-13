@@ -24,7 +24,7 @@
                 {% with requests_data | slice:"0:-2" | last as prev_requests %}
                 {% with prev_requests|gt:0 as has_prev %}
                 {% if has_prev %}
-                    {% with current_requests|sub:prev_requests|div:prev_requests|mul:100|round as change_pct %}
+                    {% with ((current_requests - prev_requests) / prev_requests) * 100|round as change_pct %}
                     {% include "_stat_card.tpl" 
                         value=current_requests 
                         label=_"Total Requests"
@@ -82,7 +82,7 @@
             {% with stats_overview | values:8 as server_errors %}
             {% with client_errors | last as current_client_errors %}
             {% with server_errors | last as current_server_errors %}
-            {% with current_client_errors|add:current_server_errors as total_errors %}
+            {% with current_client_errors + current_server_errors as total_errors %}
             {% include "_stat_card.tpl" 
                 value=total_errors 
                 label=_"Errors"

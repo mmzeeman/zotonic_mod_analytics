@@ -28,14 +28,14 @@
              aria-label="{{ title|default:_"Horizontal bar chart" }}">
             
             {% for label, val in data %}
-                {% with forloop.counter0|mul:bar_height as y_pos %}
-                {% with val|div:max_val|mul:450 as bar_width %}
+                {% with forloop.counter0 * bar_height as y_pos %}
+                {% with (val / max_val) * 450 as bar_width %}
                 
                 {# Bar group #}
                 <g class="horizontal-bar-group">
                     {# Label #}
                     <text x="5" 
-                          y="{{ y_pos|add:bar_height|div:2|add:5 }}" 
+                          y="{{ (y_pos + bar_height) / 2 + 5 }}" 
                           class="horizontal-bar-label"
                           text-anchor="start">
                         {% if label|length > 35 %}
@@ -49,7 +49,7 @@
                     {# Bar #}
                     <rect class="horizontal-bar-rect"
                           x="150" 
-                          y="{{ y_pos|add:bar_height|div:2|sub:bar_thickness|div:2 }}"
+                          y="{{ ((y_pos + bar_height) / 2 - bar_thickness) / 2 }}"
                           width="{{ bar_width }}"
                           height="{{ bar_thickness }}"
                           fill="{{ bar_color }}"
@@ -59,8 +59,8 @@
                     
                     {# Value label #}
                     {% if display_values %}
-                    <text x="{{ bar_width|add:155 }}" 
-                          y="{{ y_pos|add:bar_height|div:2|add:4 }}" 
+                    <text x="{{ bar_width + 155 }}" 
+                          y="{{ (y_pos + bar_height) / 2 + 4 }}" 
                           class="horizontal-bar-value"
                           text-anchor="start">
                         {{ val }}
