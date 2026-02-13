@@ -17,7 +17,7 @@
 {% if item_count > 0 %}
     {% with data|element:2|max as max_val %}
     {% with chart_width - 80 as chart_area_width %}
-    {% with chart_height - 60 as chart_area_height %}
+    {% with chart_height - 40 as chart_area_height %}
     {% with chart_area_width / item_count as bar_spacing %}
     {% with bar_spacing * 0.7 as bar_width %}
     
@@ -81,10 +81,10 @@
                     
                     {# Label at bottom #}
                     <text x="{{ x_pos + bar_spacing / 2 }}" 
-                          y="{{ chart_area_height + 20 }}" 
+                          y="{{ chart_area_height + 25 }}" 
                           class="chart-axis-text"
                           text-anchor="middle"
-                          transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ chart_area_height + 20 }})">
+                          transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ chart_area_height + 25 }})">
                         {% if label|length > 10 %}
                             {{ label|slice:[0,10] }}...
                             <title>{{ label }}</title>
