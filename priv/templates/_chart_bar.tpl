@@ -1,0 +1,127 @@
+{# Vertical Bar Chart
+   Parameters:
+   - data: list of {label, value} tuples
+   - title: chart title (optional)
+   - width: chart width (default: 600)
+   - height: chart height (default: 300)
+   - color: bar color (default: primary color)
+   - show_values: whether to show values on top of bars (default: true)
+   - show_grid: whether to show grid lines (default: true)
+#}
+{% with width|default:600 as chart_width %}
+{% with height|default:300 as chart_height %}
+{% with color|default:"#5bc0de" as bar_color %}
+{% with show_values|default:1 as display_values %}
+{% with show_grid|default:1 as display_grid %}
+{% with data|length as item_count %}
+{% if item_count > 0 %}
+    {% with data|map:"1"|max as max_val %}
+    {% with chart_width|sub:80 as chart_area_width %}
+    {% with chart_height|sub:60 as chart_area_height %}
+    {% with chart_area_width|div:item_count as bar_spacing %}
+    {% with bar_spacing|mul:0.7 as bar_width %}
+    
+    <div class="chart-container">
+        {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
+        
+        <svg class="chart-svg" 
+             width="{{ chart_width }}" 
+             height="{{ chart_height }}"
+             viewBox="0 0 {{ chart_width }} {{ chart_height }}"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="{{ title|default:_"Bar chart" }}">
+            
+            {# Grid lines #}
+            {% if display_grid and max_val > 0 %}
+                {% for i in "0123" %}
+                    {% with i|add:1|mul:chart_area_height|div:4 as grid_y %}
+                    <line x1="50" 
+                          y1="{{ grid_y }}" 
+                          x2="{{ chart_area_width|add:50 }}" 
+                          y2="{{ grid_y }}"
+                          class="chart-grid-line" />
+                    <text x="45" 
+                          y="{{ grid_y|add:4 }}" 
+                          class="chart-axis-text"
+                          text-anchor="end">
+                        {{ max_val|sub:max_val|mul:i|div:4|round }}
+                    </text>
+                    {% endwith %}
+                {% endfor %}
+            {% endif %}
+            
+            {# Bars #}
+            {% for label, val in data %}
+                {% with forloop.counter0|mul:bar_spacing|add:50 as x_pos %}
+                {% with val|div:max_val|mul:chart_area_height as bar_height_calc %}
+                {% with chart_area_height|sub:bar_height_calc as bar_y %}
+                
+                <g class="chart-bar-group">
+                    {# Bar #}
+                    <rect class="chart-bar"
+                          x="{{ x_pos|add:bar_spacing|div:2|sub:bar_width|div:2 }}" 
+                          y="{{ bar_y }}"
+                          width="{{ bar_width }}"
+                          height="{{ bar_height_calc }}"
+                          fill="{{ bar_color }}"
+                          rx="2">
+                        <title>{{ label }}: {{ val }}</title>
+                    </rect>
+                    
+                    {# Value on top #}
+                    {% if display_values %}
+                    <text x="{{ x_pos|add:bar_spacing|div:2 }}" 
+                          y="{{ bar_y|sub:5 }}" 
+                          class="chart-value-text"
+                          text-anchor="middle">
+                        {{ val }}
+                    </text>
+                    {% endif %}
+                    
+                    {# Label at bottom #}
+                    <text x="{{ x_pos|add:bar_spacing|div:2 }}" 
+                          y="{{ chart_area_height|add:20 }}" 
+                          class="chart-axis-text"
+                          text-anchor="middle"
+                          transform="rotate(-45, {{ x_pos|add:bar_spacing|div:2 }}, {{ chart_area_height|add:20 }})">
+                        {% if label|length > 10 %}
+                            {{ label|slice:"0:10" }}...
+                            <title>{{ label }}</title>
+                        {% else %}
+                            {{ label }}
+                        {% endif %}
+                    </text>
+                </g>
+                
+                {% endwith %}
+                {% endwith %}
+                {% endwith %}
+            {% endfor %}
+            
+            {# X-axis #}
+            <line x1="50" 
+                  y1="{{ chart_area_height }}" 
+                  x2="{{ chart_area_width|add:50 }}" 
+                  y2="{{ chart_area_height }}"
+                  class="chart-axis-line" />
+        </svg>
+    </div>
+    
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+{% else %}
+    <div class="chart-empty">
+        <div class="chart-empty-icon">📊</div>
+        <div class="chart-empty-text">{_ No data available _}</div>
+    </div>
+{% endif %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
