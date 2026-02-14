@@ -100,7 +100,9 @@
                             height=280
                             width=800
                             show_grid=1
-                            show_values=1 %}
+                            show_values=1
+                            y_axis_label=_"Requests"
+                            x_axis_label=_"Hour of Day" %}
                         {% endwith %}
                         {% endwith %}
                         {% endwith %}

@@ -7,6 +7,8 @@
    - color: line color (default: primary color)
    - show_dots: whether to show dots at data points (default: false)
    - show_grid: whether to show grid lines (default: true)
+   - x_axis_label: label for x-axis (optional)
+   - y_axis_label: label for y-axis (optional)
 #}
 {% with width|default:600 as chart_width %}
 {% with height|default:300 as chart_height %}
@@ -106,6 +108,27 @@
                   x2="{{ chart_area_width + 50 }}" 
                   y2="{{ chart_area_height }}"
                   class="chart-axis-line" />
+            
+            {# Y-axis label #}
+            {% if y_axis_label %}
+            <text x="15" 
+                  y="{{ chart_area_height / 2 }}" 
+                  class="chart-axis-label"
+                  text-anchor="middle"
+                  transform="rotate(-90, 15, {{ chart_area_height / 2 }})">
+                {{ y_axis_label }}
+            </text>
+            {% endif %}
+            
+            {# X-axis label #}
+            {% if x_axis_label %}
+            <text x="{{ chart_area_width / 2 + 50 }}" 
+                  y="{{ chart_area_height + 50 }}" 
+                  class="chart-axis-label"
+                  text-anchor="middle">
+                {{ x_axis_label }}
+            </text>
+            {% endif %}
         </svg>
     </div>
     
