@@ -7,6 +7,8 @@
    - color: line color (default: primary color)
    - show_dots: whether to show dots at data points (default: false)
    - show_grid: whether to show grid lines (default: true)
+   - x_axis_label: label for x-axis (optional)
+   - y_axis_label: label for y-axis (optional)
 #}
 {% with width|default:600 as chart_width %}
 {% with height|default:300 as chart_height %}
@@ -17,9 +19,11 @@
 {% if item_count > 0 %}
     {% with data|element:2|max as max_val %}
     {% with data|element:2|min as min_val %}
+    {# Round max to nice value for better axis labels #}
+    {% with max_val|nice_round as nice_max %}
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
-    {% with max_val - min_val as value_range %}
+    {% with nice_max - min_val as value_range %}
     
     <div class="chart-container">
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
@@ -32,21 +36,30 @@
              role="img"
              aria-label="{{ title|default:_"Line chart" }}">
             
-            {# Grid lines #}
+            {# Grid lines and Y-axis ticks #}
             {% if display_grid and value_range > 0 %}
                 {% for i in "01234" %}
                     {% with (i * chart_area_height) / 4 as grid_y %}
+                    {# Calculate tick value - nice_max at top (y=0), min at bottom #}
+                    {% with nice_max - (i * value_range) / 4 as tick_value %}
                     <line x1="50" 
                           y1="{{ grid_y }}" 
                           x2="{{ chart_area_width + 50 }}" 
                           y2="{{ grid_y }}"
                           class="chart-grid-line" />
-                    <text x="45" 
+                    {# Y-axis tick mark #}
+                    <line x1="45" 
+                          y1="{{ grid_y }}" 
+                          x2="50" 
+                          y2="{{ grid_y }}"
+                          class="chart-axis-line" />
+                    <text x="43" 
                           y="{{ grid_y + 4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
-                        {{ ((max_val - value_range) * i) / 4|round }}
+                        {{ tick_value|round }}
                     </text>
+                    {% endwith %}
                     {% endwith %}
                 {% endfor %}
             {% endif %}
@@ -80,10 +93,16 @@
                 {% endfor %}
             {% endif %}
             
-            {# X-axis labels #}
+            {# X-axis labels and ticks #}
             {% for label, val in data %}
                 {% with forloop.counter0 * x_spacing + 50 as x_pos %}
                 {% if forloop.counter0|divisibleby:item_count / 5|max:1 %}
+                {# X-axis tick mark #}
+                <line x1="{{ x_pos }}" 
+                      y1="{{ chart_area_height }}" 
+                      x2="{{ x_pos }}" 
+                      y2="{{ chart_area_height + 5 }}"
+                      class="chart-axis-line" />
                 <text x="{{ x_pos }}" 
                       y="{{ chart_area_height + 20 }}" 
                       class="chart-axis-text"
@@ -100,15 +119,44 @@
             {% endfor %}
             {% endwith %}
             
+            {# Y-axis #}
+            <line x1="50" 
+                  y1="0" 
+                  x2="50" 
+                  y2="{{ chart_area_height }}"
+                  class="chart-axis-line" />
+            
             {# X-axis #}
             <line x1="50" 
                   y1="{{ chart_area_height }}" 
                   x2="{{ chart_area_width + 50 }}" 
                   y2="{{ chart_area_height }}"
                   class="chart-axis-line" />
+            
+            {# Y-axis label #}
+            {% if y_axis_label %}
+            <text x="15" 
+                  y="{{ chart_area_height / 2 }}" 
+                  class="chart-axis-label"
+                  text-anchor="middle"
+                  transform="rotate(-90, 15, {{ chart_area_height / 2 }})">
+                {{ y_axis_label }}
+            </text>
+            {% endif %}
+            
+            {# X-axis label #}
+            {% if x_axis_label %}
+            <text x="{{ chart_area_width / 2 + 50 }}" 
+                  y="{{ chart_area_height + 50 }}" 
+                  class="chart-axis-label"
+                  text-anchor="middle">
+                {{ x_axis_label }}
+            </text>
+            {% endif %}
         </svg>
     </div>
     
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}

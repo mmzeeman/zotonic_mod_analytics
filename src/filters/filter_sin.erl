@@ -34,16 +34,5 @@ sin(undefined, _Context) ->
     0;
 sin(Value, _Context) when is_number(Value) ->
     math:sin(Value);
-sin(Value, _Context) when is_binary(Value) ->
-    try
-        math:sin(binary_to_float(Value))
-    catch
-        _:_ ->
-            try
-                math:sin(float(binary_to_integer(Value)))
-            catch
-                _:_ -> 0
-            end
-    end;
 sin(_Value, _Context) ->
     0.

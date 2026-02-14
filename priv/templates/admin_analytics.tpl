@@ -61,14 +61,14 @@
                     </h3>
                 </div>
                 <div class="panel-body">
-                    {% include "_chart_bar.tpl"
+                    {% include "_chart_area.tpl"
                         data=visitors
                         title=""
                         width=1000
                         height=300
-                        color="#5bc0de"
-                        show_values=true
-                        label_format="j M"
+                        gradient_colors="#5bc0de,#3a9cb8"
+                        y_axis_label=_"Visitors"
+                        x_axis_label=_"Date"
                     %}
                 </div>
             </div>
@@ -100,7 +100,9 @@
                             height=280
                             width=800
                             show_grid=1
-                            show_values=1 %}
+                            show_values=1
+                            y_axis_label=_"Requests"
+                            x_axis_label=_"Hour of Day" %}
                         {% endwith %}
                         {% endwith %}
                         {% endwith %}

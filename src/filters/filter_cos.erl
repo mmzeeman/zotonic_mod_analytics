@@ -34,16 +34,5 @@ cos(undefined, _Context) ->
     1;
 cos(Value, _Context) when is_number(Value) ->
     math:cos(Value);
-cos(Value, _Context) when is_binary(Value) ->
-    try
-        math:cos(binary_to_float(Value))
-    catch
-        _:_ ->
-            try
-                math:cos(float(binary_to_integer(Value)))
-            catch
-                _:_ -> 1
-            end
-    end;
 cos(_Value, _Context) ->
     1.
