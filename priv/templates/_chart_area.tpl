@@ -62,7 +62,8 @@
                 <text x="43" 
                       y="{{ grid_y + 4 }}" 
                       class="chart-axis-text"
-                      text-anchor="end">
+                      text-anchor="end"
+                      font-size="11">
                     {{ tick_value|round }}
                 </text>
                 {% endwith %}
