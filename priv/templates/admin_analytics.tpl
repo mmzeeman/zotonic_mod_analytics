@@ -11,6 +11,11 @@
     <p>{_ This page shows site analytics. _}</p>
 </div>
 
+{# Time Range Selector #}
+<div class="container-fluid">
+    {% include "_time_range_selector.tpl" active_range=active_range %}
+</div>
+
 <div class="container-fluid">
 
     {# Stats Overview Section - Responsive Panel Grid #}
@@ -41,11 +46,22 @@
 
     {# Unique Visitors Section - SVG Bar Chart #}
     {% with m.analytics.unique_visitors as visitors %}
+    {% with active_range|default:"28d" as current_range %}
+    {% with current_range == "7d" as is_7d %}
+    {% with current_range == "91d" as is_91d %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
+                    <h3 class="panel-title">
+                        {% if is_7d %}
+                            {_ Unique Visitors (7 days) _}
+                        {% elif is_91d %}
+                            {_ Unique Visitors (91 days) _}
+                        {% else %}
+                            {_ Unique Visitors (28 days) _}
+                        {% endif %}
+                    </h3>
                 </div>
                 <div class="panel-body">
                     {% include "_chart_bar.tpl"
@@ -61,6 +77,9 @@
             </div>
         </div>
     </div>
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
     {% endwith %}
 
     {# Main Visualizations Grid #}

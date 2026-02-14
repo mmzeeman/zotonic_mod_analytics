@@ -109,9 +109,21 @@ m_get(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
 
-page_views(Context) ->
+%% Helper function to get date range based on context
+get_date_range(Context) ->
     Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    Range = z_context:get(active_range, Context, <<"28d">>),
+    Days = case Range of
+        <<"7d">> -> 7;
+        <<"28d">> -> 28;
+        <<"91d">> -> 91;
+        _ -> 28  % Default to 28 days
+    end,
+    From = z_datetime:prev_day(Until, Days),
+    {From, Until}.
+
+page_views(Context) ->
+    {From, Until} = get_date_range(Context),
     page_views(From, Until, Context).
 
 page_views(From, Until, Context) -> 
@@ -140,8 +152,7 @@ WHERE
     end.
 
 sessions(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     sessions(From, Until, Context).
 
 sessions(From, Until, Context) -> 
@@ -171,9 +182,8 @@ WHERE
 
 
 stats_overview(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    stats_overview(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    stats_overview(From, Until, Context).
 
 stats_overview(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -304,9 +314,8 @@ ORDER BY
 
 
 unique_visitors(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    unique_visitors(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    unique_visitors(From, Until, Context).
 
 
 unique_visitors(From, Until, Context) ->
@@ -359,9 +368,8 @@ ORDER BY
     end.
 
 erroring_pages(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    erroring_pages(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    erroring_pages(From, Until, Context).
 
 erroring_pages(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -393,9 +401,8 @@ LIMIT 10">>,
     end.
 
 popular_pages(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    popular_pages(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    popular_pages(From, Until, Context).
 
 popular_pages(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -586,9 +593,8 @@ LIMIT 100">>,
 
 
 popular_resources(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    popular_resources(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    popular_resources(From, Until, Context).
 
 popular_resources(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -690,9 +696,8 @@ ORDER BY
     end.
 
 dispatch_rule_health(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    dispatch_rule_health(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    dispatch_rule_health(From, Until, Context).
 
 dispatch_rule_health(From, Until, Context) ->
     Site = z_context:site(Context),
@@ -727,9 +732,8 @@ ORDER BY
     end.
 
 user_activity(Context) ->
-    To = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(To, 30),
-    user_activity(From, To, Context).
+    {From, Until} = get_date_range(Context),
+    user_activity(From, Until, Context).
 
 user_activity(From, Until, Context) ->
     Q = <<"
@@ -826,8 +830,7 @@ hourly_traffic(From, Until, Context) ->
 
 %% @doc Get response time distribution in buckets
 response_time_distribution(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     response_time_distribution(From, Until, Context).
 
 response_time_distribution(From, Until, Context) ->
@@ -871,8 +874,7 @@ response_time_distribution(From, Until, Context) ->
 
 %% @doc Get error breakdown by type (4xx vs 5xx)
 error_breakdown(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     error_breakdown(From, Until, Context).
 
 error_breakdown(From, Until, Context) ->
@@ -908,8 +910,7 @@ error_breakdown(From, Until, Context) ->
 
 %% @doc Get top traffic sources/referrers
 traffic_sources(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     traffic_sources(From, Until, Context).
 
 traffic_sources(From, Until, Context) ->
@@ -942,8 +943,7 @@ traffic_sources(From, Until, Context) ->
 
 %% @doc Get session duration distribution
 session_duration_distribution(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     session_duration_distribution(From, Until, Context).
 
 session_duration_distribution(From, Until, Context) ->
@@ -996,8 +996,7 @@ session_duration_distribution(From, Until, Context) ->
 
 %% @doc Get traffic pattern by hour of day (aggregate)
 traffic_by_hour_of_day(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_day(Until, 30),
+    {From, Until} = get_date_range(Context),
     traffic_by_hour_of_day(From, Until, Context).
 
 traffic_by_hour_of_day(From, Until, Context) ->
