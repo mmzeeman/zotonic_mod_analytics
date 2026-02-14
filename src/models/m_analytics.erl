@@ -708,8 +708,8 @@ dispatch_rule_health(From, Until, Context) ->
 FROM 
     access_log
 WHERE
-    timestamp < $until
-    AND timestamp > $from
+    timestamp <= $until
+    AND timestamp >= $from
     AND site = $site
 GROUP BY 
     dispatch_rule 
@@ -748,8 +748,8 @@ FROM
     access_log
 WHERE 
     user_id IS NOT NULL
-    AND timestamp < $until
-    AND timestamp > $from
+    AND timestamp <= $until
+    AND timestamp >= $from
     AND site = $site
 GROUP BY 
     user_id
