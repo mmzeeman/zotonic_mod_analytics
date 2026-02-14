@@ -227,17 +227,27 @@
     font-weight: 500;
     color: var(--color-gray-dark);
     transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .time-range-btn:hover {
     background: var(--color-gray-light);
     border-color: #ccc;
+    text-decoration: none;
+    color: var(--color-gray-dark);
 }
 
 .time-range-btn.active {
     background: var(--color-primary);
     color: white;
     border-color: var(--color-primary);
+}
+
+.time-range-btn.active:hover {
+    background: #4a9fb8;
+    border-color: #4a9fb8;
+    color: white;
 }
 
 /* Tooltip Styles */

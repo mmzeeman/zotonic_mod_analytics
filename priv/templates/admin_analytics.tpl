@@ -11,6 +11,11 @@
     <p>{_ This page shows site analytics. _}</p>
 </div>
 
+{# Time Range Selector #}
+<div class="container-fluid">
+    {% include "_time_range_selector.tpl" active_range=active_range %}
+</div>
+
 <div class="container-fluid">
 
     {# Stats Overview Section - Responsive Panel Grid #}
@@ -45,7 +50,15 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
+                    <h3 class="panel-title">
+                        {% if active_range == "7d" %}
+                            {_ Unique Visitors (7 days) _}
+                        {% elif active_range == "91d" %}
+                            {_ Unique Visitors (91 days) _}
+                        {% else %}
+                            {_ Unique Visitors (28 days) _}
+                        {% endif %}
+                    </h3>
                 </div>
                 <div class="panel-body">
                     {% include "_chart_bar.tpl"
