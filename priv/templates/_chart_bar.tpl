@@ -39,10 +39,10 @@
             
             {# Grid lines and Y-axis ticks #}
             {% if display_grid and nice_max > 0 %}
-                {% for i in [0, 1, 2, 3] %}
-                    {% with ((i + 1) * chart_area_height) / 4 as grid_y %}
+                {% for i in [0, 1, 2, 3, 4] %}
+                    {% with (i * chart_area_height) / 4 as grid_y %}
                     {# Calculate tick value - nice_max at top, 0 at bottom #}
-                    {% with nice_max - ((i + 1) * nice_max) / 4 as tick_value %}
+                    {% with nice_max - (i * nice_max) / 4 as tick_value %}
                     <line x1="50" 
                           y1="{{ top_padding + grid_y }}" 
                           x2="{{ chart_area_width + 50 }}" 
