@@ -38,19 +38,6 @@ nice_round(Value, _Context) when is_number(Value), Value =< 0 ->
     0;
 nice_round(Value, _Context) when is_number(Value) ->
     calculate_nice_ceiling(Value);
-nice_round(Value, Context) when is_binary(Value) ->
-    try
-        NumValue = binary_to_float(Value),
-        nice_round(NumValue, Context)
-    catch
-        _:_ ->
-            try
-                NumValue = float(binary_to_integer(Value)),
-                nice_round(NumValue, Context)
-            catch
-                _:_ -> 0
-            end
-    end;
 nice_round(_Value, _Context) ->
     0.
 
