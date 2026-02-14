@@ -35,7 +35,7 @@
              role="img"
              aria-label="{{ title|default:_"Bar chart" }}">
             
-            {# Grid lines #}
+            {# Grid lines and Y-axis ticks #}
             {% if display_grid and max_val > 0 %}
                 {% for i in "0123" %}
                     {% with ((i + 1) * chart_area_height) / 4 as grid_y %}
@@ -44,7 +44,13 @@
                           x2="{{ chart_area_width + 50 }}" 
                           y2="{{ top_padding + grid_y }}"
                           class="chart-grid-line" />
-                    <text x="45" 
+                    {# Y-axis tick mark #}
+                    <line x1="45" 
+                          y1="{{ top_padding + grid_y }}" 
+                          x2="50" 
+                          y2="{{ top_padding + grid_y }}"
+                          class="chart-axis-line" />
+                    <text x="43" 
                           y="{{ top_padding + grid_y + 4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
@@ -82,7 +88,13 @@
                     </text>
                     {% endif %}
                     
-                    {# Label at bottom #}
+                    {# Label at bottom and X-axis tick #}
+                    {# X-axis tick mark #}
+                    <line x1="{{ x_pos + bar_spacing / 2 }}" 
+                          y1="{{ top_padding + chart_area_height }}" 
+                          x2="{{ x_pos + bar_spacing / 2 }}" 
+                          y2="{{ top_padding + chart_area_height + 5 }}"
+                          class="chart-axis-line" />
                     <text x="{{ x_pos + bar_spacing / 2 }}" 
                           y="{{ top_padding + chart_area_height + 25 }}" 
                           class="chart-axis-text"
@@ -100,6 +112,13 @@
                 {% endwith %}
                 {% endwith %}
             {% endfor %}
+            
+            {# Y-axis #}
+            <line x1="50" 
+                  y1="{{ top_padding }}" 
+                  x2="50" 
+                  y2="{{ top_padding + chart_area_height }}"
+                  class="chart-axis-line" />
             
             {# X-axis #}
             <line x1="50" 

@@ -40,7 +40,7 @@
                 </linearGradient>
             </defs>
             
-            {# Grid lines #}
+            {# Grid lines and Y-axis ticks #}
             {% for i in "01234" %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
                 <line x1="50" 
@@ -48,7 +48,13 @@
                       x2="{{ chart_area_width + 50 }}" 
                       y2="{{ grid_y }}"
                       class="chart-grid-line" />
-                <text x="45" 
+                {# Y-axis tick mark #}
+                <line x1="45" 
+                      y1="{{ grid_y }}" 
+                      x2="50" 
+                      y2="{{ grid_y }}"
+                      class="chart-axis-line" />
+                <text x="43" 
                       y="{{ grid_y + 4 }}" 
                       class="chart-axis-text"
                       text-anchor="end">
@@ -83,10 +89,16 @@
                   stroke-width="2"
                   fill="none" />
             
-            {# X-axis labels #}
+            {# X-axis labels and ticks #}
             {% for label, val in data %}
                 {% with forloop.counter0 * x_spacing + 50 as x_pos %}
                 {% if forloop.counter0|divisibleby:item_count / 5|max:1 %}
+                {# X-axis tick mark #}
+                <line x1="{{ x_pos }}" 
+                      y1="{{ chart_area_height }}" 
+                      x2="{{ x_pos }}" 
+                      y2="{{ chart_area_height + 5 }}"
+                      class="chart-axis-line" />
                 <text x="{{ x_pos }}" 
                       y="{{ chart_area_height + 20 }}" 
                       class="chart-axis-text"
@@ -102,6 +114,13 @@
                 {% endwith %}
             {% endfor %}
             {% endwith %}
+            
+            {# Y-axis #}
+            <line x1="50" 
+                  y1="0" 
+                  x2="50" 
+                  y2="{{ chart_area_height }}"
+                  class="chart-axis-line" />
             
             {# X-axis #}
             <line x1="50" 
