@@ -17,9 +17,11 @@
 {% if item_count > 0 %}
     {% with data|element:2|max as max_val %}
     {% with data|element:2|min as min_val %}
+    {# Round max to nice value for better axis labels #}
+    {% with max_val|nice_round as nice_max %}
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
-    {% with max_val - min_val as value_range %}
+    {% with nice_max - min_val as value_range %}
     
     <div class="chart-container">
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
@@ -43,8 +45,8 @@
             {# Grid lines and Y-axis ticks with better spacing #}
             {% for i in [0, 1, 2, 3, 4] %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
-                {# Calculate tick value - max at top (y=0), min at bottom #}
-                {% with max_val - (i * value_range) / 4 as tick_value %}
+                {# Calculate tick value - nice_max at top (y=0), min at bottom #}
+                {% with nice_max - (i * value_range) / 4 as tick_value %}
                 <line x1="50" 
                       y1="{{ grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" 
@@ -159,6 +161,7 @@
         </svg>
     </div>
     
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}

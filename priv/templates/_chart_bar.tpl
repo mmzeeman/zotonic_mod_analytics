@@ -18,6 +18,8 @@
 {% with data|length as item_count %}
 {% if item_count > 0 %}
     {% with data|element:2|max as max_val %}
+    {# Round max to nice value for better axis labels #}
+    {% with max_val|nice_round as nice_max %}
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
     {% with 20 as top_padding %}
@@ -36,11 +38,11 @@
              aria-label="{{ title|default:_"Bar chart" }}">
             
             {# Grid lines and Y-axis ticks #}
-            {% if display_grid and max_val > 0 %}
+            {% if display_grid and nice_max > 0 %}
                 {% for i in [0, 1, 2, 3] %}
                     {% with ((i + 1) * chart_area_height) / 4 as grid_y %}
-                    {# Calculate tick value - max at top, 0 at bottom #}
-                    {% with max_val - ((i + 1) * max_val) / 4 as tick_value %}
+                    {# Calculate tick value - nice_max at top, 0 at bottom #}
+                    {% with nice_max - ((i + 1) * nice_max) / 4 as tick_value %}
                     <line x1="50" 
                           y1="{{ top_padding + grid_y }}" 
                           x2="{{ chart_area_width + 50 }}" 
@@ -66,7 +68,7 @@
             {# Bars #}
             {% for label, val in data %}
                 {% with forloop.counter0 * bar_spacing + 50 as x_pos %}
-                {% with (val / max_val) * chart_area_height as bar_height_calc %}
+                {% with (val / nice_max) * chart_area_height as bar_height_calc %}
                 {% with top_padding + chart_area_height - bar_height_calc as bar_y %}
                 
                 <g class="chart-bar-group">
@@ -153,6 +155,7 @@
         </svg>
     </div>
     
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}
