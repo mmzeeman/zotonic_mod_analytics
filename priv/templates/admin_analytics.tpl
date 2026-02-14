@@ -75,40 +75,35 @@
             </div>
         </div>
 
-        {# Panel: Error Breakdown #}
+        {# Error Breakdown Section #}
         <div class="analytics-grid-full">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Error Breakdown _}</h3>
                 </div>
-                <div class="panel-body">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     {% with m.analytics.error_breakdown as error_data %}
                     {% if error_data %}
-                        {% with error_data|element:1 as labels %}
-                        {% with error_data|element:2 as values %}
-                        {# Create data with colors for donut chart #}
-                        {% with labels|first as label1 %}
-                        {% with labels|last as label2 %}
-                        {% with values|first as val1 %}
-                        {% with values|last as val2 %}
-                        {% with [[label1, val1, "#f0ad4e"], [label2, val2, "#d9534f"]] as colored_data %}
-                        {% include "_chart_donut.tpl" 
-                            data=colored_data 
-                            title=""
-                            size=300
-                            show_legend=1 %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">✅</div>
-                            <div class="chart-empty-text">{_ No errors found _}</div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>{_ Error Type _}</th>
+                                        <th>{_ Count _}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error_type, count in error_data %}
+                                    <tr>
+                                        <td>{{ error_type }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
+                    {% else %}
+                        <p class="text-muted">{_ No errors found _}</p>
                     {% endif %}
                     {% endwith %}
                 </div>
