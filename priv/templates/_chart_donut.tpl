@@ -32,17 +32,17 @@
                 {% with (val / total_value) * 360 as angle %}
                 {% with current_angle + angle as end_angle %}
                 
-                {# Calculate arc path - using approximate circle math #}
+                {# Calculate arc path - using circle trigonometry #}
                 {% with current_angle * 0.0174533 as start_rad %}
                 {% with end_angle * 0.0174533 as end_rad %}
-                {% with (center + radius) * start_rad|sin as start_x %}
-                {% with (center - radius) * start_rad|cos as start_y %}
-                {% with (center + radius) * end_rad|sin as end_x %}
-                {% with (center - radius) * end_rad|cos as end_y %}
-                {% with (center + inner_radius) * start_rad|sin as inner_start_x %}
-                {% with (center - inner_radius) * start_rad|cos as inner_start_y %}
-                {% with (center + inner_radius) * end_rad|sin as inner_end_x %}
-                {% with (center - inner_radius) * end_rad|cos as inner_end_y %}
+                {% with center + radius * start_rad|sin as start_x %}
+                {% with center - radius * start_rad|cos as start_y %}
+                {% with center + radius * end_rad|sin as end_x %}
+                {% with center - radius * end_rad|cos as end_y %}
+                {% with center + inner_radius * start_rad|sin as inner_start_x %}
+                {% with center - inner_radius * start_rad|cos as inner_start_y %}
+                {% with center + inner_radius * end_rad|sin as inner_end_x %}
+                {% with center - inner_radius * end_rad|cos as inner_end_y %}
                 {% with angle >= 180 as large_arc %}
                 
                 <path class="chart-donut-segment"

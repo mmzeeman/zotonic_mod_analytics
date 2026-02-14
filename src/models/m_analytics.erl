@@ -743,7 +743,7 @@ SELECT
     MIN(timestamp) AS first_activity,
     MAX(timestamp) AS last_activity,
     ARRAY_AGG(DISTINCT peer_ip) AS ips,
-    ARRAY_AGG(DISTINCT rsc_id) FILTER (WHERE rsc_id IS NOT NULL) AS rsc,
+    ARRAY_AGG(DISTINCT rsc_id) FILTER (WHERE rsc_id IS NOT NULL) AS rsc
 FROM 
     access_log
 WHERE 

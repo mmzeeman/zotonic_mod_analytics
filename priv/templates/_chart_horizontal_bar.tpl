@@ -21,25 +21,27 @@
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
         
         <svg class="chart-svg" 
+             width="100%"
              height="{{ chart_height }}" 
-             viewBox="0 0 600 {{ chart_height }}"
+             viewBox="0 0 800 {{ chart_height }}"
              xmlns="http://www.w3.org/2000/svg"
              role="img"
              aria-label="{{ title|default:_"Horizontal bar chart" }}">
             
             {% for label, val in data %}
                 {% with forloop.counter0 * bar_height as y_pos %}
-                {% with (val / max_val) * 450 as bar_width %}
+                {% with (val / max_val) * 550 as bar_width %}
                 
                 {# Bar group #}
                 <g class="horizontal-bar-group">
                     {# Label #}
-                    <text x="5" 
+                    <text x="10" 
                           y="{{ y_pos + bar_height / 2 + 4 }}" 
                           class="horizontal-bar-label"
-                          text-anchor="start">
-                        {% if label|length > 35 %}
-                            {{ label|slice:[0,35] }}...
+                          text-anchor="start"
+                          font-size="12">
+                        {% if label|length > 45 %}
+                            {{ label|slice:[0,45] }}...
                             <title>{{ label }}</title>
                         {% else %}
                             {{ label }}
@@ -48,7 +50,7 @@
                     
                     {# Bar #}
                     <rect class="horizontal-bar-rect"
-                          x="150" 
+                          x="200" 
                           y="{{ y_pos + (bar_height - bar_thickness) / 2 }}"
                           width="{{ bar_width }}"
                           height="{{ bar_thickness }}"
@@ -59,10 +61,11 @@
                     
                     {# Value label #}
                     {% if display_values %}
-                    <text x="{{ bar_width + 155 }}" 
+                    <text x="{{ bar_width + 205 }}" 
                           y="{{ y_pos + bar_height / 2 + 4 }}" 
                           class="horizontal-bar-value"
-                          text-anchor="start">
+                          text-anchor="start"
+                          font-size="12">
                         {{ val }}
                     </text>
                     {% endif %}
