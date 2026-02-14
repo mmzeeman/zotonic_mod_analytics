@@ -24,19 +24,28 @@
             {% if visitor_values %}
                 {% with visitor_values | last as current_value %}
                     {% with visitor_values | first as first_value %}
-                        {# Calculate percentage change: ((current - first) / first * 100) #}
-                        {% with first_value > 0 and ((current_value - first_value) * 100.0 / first_value) | round as change_percent %}
-                            <div class="row" style="margin-bottom: 20px;">
-                                <div class="col-lg-3 col-md-4 col-sm-6">
+                        <div class="row" style="margin-bottom: 20px;">
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                {% if first_value > 0 %}
+                                    {# Calculate percentage change: ((current - first) / first * 100) #}
+                                    {% with ((current_value - first_value) * 100.0 / first_value) | round as change_percent %}
+                                        {% include "_stat_card.tpl" 
+                                            label=_"Unique Visitors"
+                                            value=current_value
+                                            change_percent=change_percent
+                                            trend_data=visitor_values
+                                        %}
+                                    {% endwith %}
+                                {% else %}
+                                    {# No percentage change when first value is 0 #}
                                     {% include "_stat_card.tpl" 
                                         label=_"Unique Visitors"
                                         value=current_value
-                                        change_percent=change_percent
                                         trend_data=visitor_values
                                     %}
-                                </div>
+                                {% endif %}
                             </div>
-                        {% endwith %}
+                        </div>
                     {% endwith %}
                 {% endwith %}
             {% endif %}
