@@ -37,7 +37,7 @@
             
             {# Grid lines and Y-axis ticks #}
             {% if display_grid and max_val > 0 %}
-                {% for i in "0123" %}
+                {% for i in [0, 1, 2, 3] %}
                     {% with ((i + 1) * chart_area_height) / 4 as grid_y %}
                     <line x1="50" 
                           y1="{{ top_padding + grid_y }}" 
