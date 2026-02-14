@@ -221,7 +221,7 @@ FROM
 LEFT JOIN
     unique_sessions us
 ON
-    ds.day == us.day
+    ds.day = us.day
 ORDER BY
     ds.day;
 ">>,
@@ -284,7 +284,7 @@ FROM
 LEFT JOIN
     rsc_stats rs
 ON
-    ds.day == rs.day
+    ds.day = rs.day
 ORDER BY
     ds.day;
 ">>,
@@ -343,7 +343,7 @@ FROM
 LEFT JOIN
     unique_sessions us
 ON
-    ds.day == us.day
+    ds.day = us.day
 ORDER BY
     ds.day;
 ">>,

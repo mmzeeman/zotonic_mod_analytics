@@ -224,45 +224,27 @@
         
     </div>
 
-    {# Unique Visitors Section - Keep existing visualization #}
+    {# Unique Visitors Section - SVG Bar Chart #}
     {% with m.analytics.unique_visitors as visitors %}
-    {% with visitors | values | max as max_sessions %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Unique Visitors _}</h3>
+                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
                 </div>
-                <div class="panel-body" style="padding: 15px 15px 50px 15px;">
-                    <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 280px;">
-                        {% for day, unique_sessions in visitors %}
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 40px; position: relative;">
-                            <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 260px; width: 100%;">
-                                <div style="background-color: #5bc0de; position: relative; width: 100%; 
-                                            height: {% if max_sessions > 0 %}{{ (unique_sessions * 100) / max_sessions }}%{% else %}0%{% endif %}; 
-                                            min-height: 20px; border-radius: 3px 3px 0 0;"
-                                     role="progressbar" 
-                                     aria-valuenow="{{ unique_sessions }}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="{{ max_sessions }}">
-                                    <div style="position: absolute; top: 5px; width: 100%; text-align: center; 
-                                                font-size: 9px; font-weight: 700; color: #2c5d6f;">
-                                        {{ unique_sessions }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%) rotate(-45deg); 
-                                        transform-origin: center center; white-space: nowrap; font-size: 9px; font-weight: 500;">
-                                {{ day | date:"j M" }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+                <div class="panel-body">
+                    {% include "_chart_bar.tpl"
+                        data=visitors
+                        title=""
+                        width=1000
+                        height=300
+                        color="#5bc0de"
+                        show_values=true
+                    %}
                 </div>
             </div>
         </div>
     </div>
-    {% endwith %}
     {% endwith %}
 
     {# User Activity Section - Collapsible #}
