@@ -41,7 +41,7 @@
             </defs>
             
             {# Grid lines and Y-axis ticks with better spacing #}
-            {% for i in "01234" %}
+            {% for i in [0, 1, 2, 3, 4] %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
                 {# Calculate tick value - using simple scaling from min to max #}
                 {% with min_val + (i * value_range) / 4 as tick_value %}
