@@ -21,6 +21,7 @@
     {% with max_val|nice_round as nice_max %}
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
+    {% with 20 as top_padding %}
     {% with nice_max - min_val as value_range %}
     
     <div class="chart-container">
@@ -48,21 +49,21 @@
                 {# Calculate tick value - nice_max at top (y=0), min at bottom #}
                 {% with nice_max - (i * value_range) / 4 as tick_value %}
                 <line x1="50" 
-                      y1="{{ grid_y }}" 
+                      y1="{{ top_padding + grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" 
-                      y2="{{ grid_y }}"
+                      y2="{{ top_padding + grid_y }}"
                       class="chart-grid-line" 
                       stroke="#d0d0d0" 
                       stroke-width="1"
                       opacity="0.7" />
                 {# Y-axis tick mark #}
                 <line x1="45" 
-                      y1="{{ grid_y }}" 
+                      y1="{{ top_padding + grid_y }}" 
                       x2="50" 
-                      y2="{{ grid_y }}"
+                      y2="{{ top_padding + grid_y }}"
                       class="chart-axis-line" />
                 <text x="43" 
-                      y="{{ grid_y + 4 }}" 
+                      y="{{ top_padding + grid_y + 4 }}" 
                       class="chart-axis-text"
                       text-anchor="end"
                       font-size="11">
@@ -74,18 +75,20 @@
             
             {# Build area path #}
             {% with chart_area_width / item_count - 1 as x_spacing %}
+            {# Calculate last data point x position #}
+            {% with (item_count - 1) * x_spacing + 50 as last_x %}
             <path class="chart-area"
-                  d="M 50,{{ chart_area_height }}
+                  d="M 50,{{ top_padding + chart_area_height }}
                      {% for label, val in data %}
                         {% with forloop.counter0 * x_spacing + 50 as x_pos %}
                         {% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}
                         {% with chart_area_height - y_scaled as y_pos %}
-                        L {{ x_pos }},{{ y_pos }}
+                        L {{ x_pos }},{{ top_padding + y_pos }}
                         {% endwith %}
                         {% endwith %}
                         {% endwith %}
                      {% endfor %}
-                     L {{ chart_area_width + 50 }},{{ chart_area_height }}
+                     L {{ last_x }},{{ top_padding + chart_area_height }}
                      Z"
                   fill="url(#areaGradient)">
                 <title>{{ title|default:_"Area data" }}</title>
@@ -93,7 +96,7 @@
             
             {# Line on top of area #}
             <path class="chart-line"
-                  d="M {% for label, val in data %}{% with forloop.counter0 * x_spacing + 50 as x_pos %}{% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}{% with chart_area_height - y_scaled as y_pos %}{{ x_pos }},{{ y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
+                  d="M {% for label, val in data %}{% with forloop.counter0 * x_spacing + 50 as x_pos %}{% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}{% with chart_area_height - y_scaled as y_pos %}{{ x_pos }},{{ top_padding + y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
                   stroke="{{ start_color }}"
                   stroke-width="2"
                   fill="none" />
@@ -106,16 +109,16 @@
                 {% if forloop.counter0|divisibleby:tick_interval or forloop.first or forloop.last %}
                 {# X-axis tick mark #}
                 <line x1="{{ x_pos }}" 
-                      y1="{{ chart_area_height }}" 
+                      y1="{{ top_padding + chart_area_height }}" 
                       x2="{{ x_pos }}" 
-                      y2="{{ chart_area_height + 5 }}"
+                      y2="{{ top_padding + chart_area_height + 5 }}"
                       class="chart-axis-line" />
                  <text x="{{ x_pos }}" 
-                       y="{{ chart_area_height + 20 }}" 
+                       y="{{ top_padding + chart_area_height + 20 }}" 
                        class="chart-axis-text"
                        text-anchor="middle"
                        font-size="10"
-                       transform="rotate(-45, {{ x_pos }}, {{ chart_area_height + 20 }})">
+                       transform="rotate(-45, {{ x_pos }}, {{ top_padding + chart_area_height + 20 }})">
                      {{ label|date:"j M" }}
                  </text>
                 {% endif %}
@@ -123,28 +126,29 @@
             {% endfor %}
             {% endwith %}
             {% endwith %}
+            {% endwith %}
             
             {# Y-axis #}
             <line x1="50" 
-                  y1="0" 
+                  y1="{{ top_padding }}" 
                   x2="50" 
-                  y2="{{ chart_area_height }}"
+                  y2="{{ top_padding + chart_area_height }}"
                   class="chart-axis-line" />
             
             {# X-axis #}
             <line x1="50" 
-                  y1="{{ chart_area_height }}" 
+                  y1="{{ top_padding + chart_area_height }}" 
                   x2="{{ chart_area_width + 50 }}" 
-                  y2="{{ chart_area_height }}"
+                  y2="{{ top_padding + chart_area_height }}"
                   class="chart-axis-line" />
             
             {# Y-axis label #}
             {% if y_axis_label %}
             <text x="15" 
-                  y="{{ chart_area_height / 2 }}" 
+                  y="{{ top_padding + chart_area_height / 2 }}" 
                   class="chart-axis-label"
                   text-anchor="middle"
-                  transform="rotate(-90, 15, {{ chart_area_height / 2 }})">
+                  transform="rotate(-90, 15, {{ top_padding + chart_area_height / 2 }})">
                 {{ y_axis_label }}
             </text>
             {% endif %}
@@ -152,7 +156,7 @@
             {# X-axis label #}
             {% if x_axis_label %}
             <text x="{{ chart_area_width / 2 + 50 }}" 
-                  y="{{ chart_area_height + 50 }}" 
+                  y="{{ top_padding + chart_area_height + 50 }}" 
                   class="chart-axis-label"
                   text-anchor="middle">
                 {{ x_axis_label }}
@@ -161,6 +165,7 @@
         </svg>
     </div>
     
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}
