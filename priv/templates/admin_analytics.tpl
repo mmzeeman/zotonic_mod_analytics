@@ -240,6 +240,7 @@
                         height=300
                         color="#5bc0de"
                         show_values=true
+                        label_format="j M"
                     %}
                 </div>
             </div>

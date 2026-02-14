@@ -86,7 +86,11 @@
                           class="chart-axis-text"
                           text-anchor="middle"
                           transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ top_padding + chart_area_height + 25 }})">
-                        {{ label|date:"j M" }}
+                        {% if label_format %}
+                            {{ label|date:label_format }}
+                        {% else %}
+                            {{ label }}
+                        {% endif %}
                     </text>
                 </g>
                 
