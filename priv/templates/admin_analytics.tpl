@@ -46,17 +46,14 @@
 
     {# Unique Visitors Section - SVG Bar Chart #}
     {% with m.analytics.unique_visitors as visitors %}
-    {% with active_range|default:"28d" as current_range %}
-    {% with current_range == "7d" as is_7d %}
-    {% with current_range == "91d" as is_91d %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">
-                        {% if is_7d %}
+                        {% if active_range == "7d" %}
                             {_ Unique Visitors (7 days) _}
-                        {% elif is_91d %}
+                        {% elif active_range == "91d" %}
                             {_ Unique Visitors (91 days) _}
                         {% else %}
                             {_ Unique Visitors (28 days) _}
@@ -77,9 +74,6 @@
             </div>
         </div>
     </div>
-    {% endwith %}
-    {% endwith %}
-    {% endwith %}
     {% endwith %}
 
     {# Main Visualizations Grid #}

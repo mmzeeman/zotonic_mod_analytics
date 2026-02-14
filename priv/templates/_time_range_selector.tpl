@@ -1,6 +1,6 @@
 {# Time Range Selector
    Parameters:
-   - active_range: currently active range (e.g., "7d", "28d", "91d")
+   - active_range: currently active range as a binary/string (e.g., "7d", "28d", "91d")
 #}
 {% with active_range|default:"28d" as current_range %}
 <div class="time-range-selector">
