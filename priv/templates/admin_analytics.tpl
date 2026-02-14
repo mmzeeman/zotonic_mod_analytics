@@ -132,33 +132,8 @@
             </div>
         </div>
 
-        {# Panel: Response Time Distribution #}
-        <div class="analytics-grid-half">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{_ Response Time Distribution _}</h3>
-                </div>
-                <div class="panel-body">
-                    {% with m.analytics.response_time_distribution as rt_data %}
-                    {% if rt_data %}
-                        {% include "_chart_horizontal_bar.tpl" 
-                            data=rt_data 
-                            title=""
-                            height=300
-                            color="#5cb85c" %}
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">⏱️</div>
-                            <div class="chart-empty-text">{_ No response time data available _}</div>
-                        </div>
-                    {% endif %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-
         {# Panel: Error Breakdown #}
-        <div class="analytics-grid-half">
+        <div class="analytics-grid-full">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Error Breakdown _}</h3>
@@ -197,31 +172,6 @@
             </div>
         </div>
 
-        {# Panel: Traffic Sources #}
-        <div class="analytics-grid-full">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{_ Top Traffic Sources _}</h3>
-                </div>
-                <div class="panel-body">
-                    {% with m.analytics.traffic_sources as sources %}
-                    {% if sources %}
-                        {% include "_chart_horizontal_bar.tpl" 
-                            data=sources 
-                            title=""
-                            height=400
-                            color="#5bc0de" %}
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">🔗</div>
-                            <div class="chart-empty-text">{_ No traffic source data available _}</div>
-                        </div>
-                    {% endif %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-        
     </div>
 
     {# Unique Visitors Section - SVG Bar Chart #}
@@ -348,7 +298,7 @@
     </div>
     {% endwith %}
 
-    {# Popular Pages Section - Enhanced with Chart #}
+    {# Popular Pages Section #}
     {% with m.analytics.popular_pages as popular %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
@@ -356,63 +306,36 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Popular Pages _}</h3>
                 </div>
-                <div class="panel-body">
-                    {% if popular %}
-                        {# Extract views (second column) for visualization #}
-                        {% with popular|element:1 as paths %}
-                        {% with popular|element:2 as views %}
-                        {% with paths|zip:views as chart_data %}
-                        {% include "_chart_horizontal_bar.tpl" 
-                            data=chart_data 
-                            title=""
-                            height=400
-                            color="#5bc0de"
-                            show_values=1 %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                        
-                        {# Keep table for detailed info - make it collapsible #}
-                        <details style="margin-top: 20px;">
-                            <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                                {_ View detailed table _}
-                            </summary>
-                            <div class="table-responsive" style="margin-top: 10px; max-height: 400px; overflow-y: auto;">
-                                <table class="table table-striped table-hover table-condensed">
-                                    <thead>
-                                        <tr>
-                                            <th>{_ Path _}</th>
-                                            <th>{_ Views _}</th>
-                                            <th>{_ Sessions _}</th>
-                                            <th>{_ Users _}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for path, views, sessions, users in popular %}
-                                        <tr>
-                                            <td>{{ path | escape }}</td>
-                                            <td>{{ views }}</td>
-                                            <td>{{ sessions }}</td>
-                                            <td>{{ users }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </details>
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">📄</div>
-                            <div class="chart-empty-text">{_ No popular pages data available _}</div>
-                        </div>
-                    {% endif %}
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>{_ Path _}</th>
+                                    <th>{_ Views _}</th>
+                                    <th>{_ Sessions _}</th>
+                                    <th>{_ Users _}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for path, views, sessions, users in popular %}
+                                <tr>
+                                    <td>{{ path | escape }}</td>
+                                    <td>{{ views }}</td>
+                                    <td>{{ sessions }}</td>
+                                    <td>{{ users }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     {% endwith %}
 
-    {# Popular Resources Section - Enhanced with Chart #}
+    {# Popular Resources Section #}
     {% with m.analytics.popular_resources as popular %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
@@ -420,66 +343,33 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">{_ Popular Resources _}</h3>
                 </div>
-                <div class="panel-body">
-                    {% if popular %}
-                        {# Extract resource IDs and views for visualization #}
-                        {% with popular|element:1 as ids %}
-                        {% with popular|element:2 as views %}
-                        {# Create chart data using resource titles #}
-                        {% with [] as chart_data_list %}
-                        {% for id, view_count in ids|zip:views %}
-                            {% with id.title|default:id as label %}
-                            {% endwith %}
-                        {% endfor %}
-                        {% endwith %}
-                        {# Simplified approach - use map to get titles directly #}
-                        {% include "_chart_horizontal_bar.tpl" 
-                            data=ids|zip:views
-                            title=""
-                            height=400
-                            color="#5bc0de"
-                            show_values=1 %}
-                        {% endwith %}
-                        {% endwith %}
-                        
-                        {# Keep table for detailed info with edit links - make it collapsible #}
-                        <details style="margin-top: 20px;">
-                            <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                                {_ View detailed table _}
-                            </summary>
-                            <div class="table-responsive" style="margin-top: 10px; max-height: 400px; overflow-y: auto;">
-                                <table class="table table-striped table-hover table-condensed">
-                                    <thead>
-                                        <tr>
-                                            <th>{_ Resource _}</th>
-                                            <th>{_ Views _}</th>
-                                            <th>{_ Sessions _}</th>
-                                            <th>{_ Users _}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for id, views, sessions, users in popular %}
-                                        <tr>
-                                            <td>
-                                                <a href="{% url admin_edit_rsc id=id %}">
-                                                    {{ id.title | default:id }}
-                                                </a>
-                                            </td>
-                                            <td>{{ views }}</td>
-                                            <td>{{ sessions }}</td>
-                                            <td>{{ users }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </details>
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">📚</div>
-                            <div class="chart-empty-text">{_ No popular resources data available _}</div>
-                        </div>
-                    {% endif %}
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>{_ Resource _}</th>
+                                    <th>{_ Views _}</th>
+                                    <th>{_ Sessions _}</th>
+                                    <th>{_ Users _}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for id, views, sessions, users in popular %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url admin_edit_rsc id=id %}">
+                                            {{ id.title | default:id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ views }}</td>
+                                    <td>{{ sessions }}</td>
+                                    <td>{{ users }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
