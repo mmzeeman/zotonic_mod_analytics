@@ -12,6 +12,10 @@ metrics are stored in a [DuckDB](https://duckdb.org/) database, enabling you to 
 - **DuckDB Integration**: Store data in a high-performance, in-process database.
 - **DIY Analytics**: Build your own analytics platform by querying and visualizing logged data.
 
+## Screenshot
+
+<img width="758" height="576" alt="Screenshot 2026-02-14 at 12 04 12" src="https://github.com/user-attachments/assets/51215308-1d2d-4a26-ad51-f9190832b8fa" />
+
 ## Installation
 
 1. Clone this repository into your Zotonic modules directory:
