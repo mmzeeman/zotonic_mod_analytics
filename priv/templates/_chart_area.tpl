@@ -50,9 +50,9 @@
                       x2="{{ chart_area_width + 50 }}" 
                       y2="{{ grid_y }}"
                       class="chart-grid-line" 
-                      stroke="#e0e0e0" 
-                      stroke-width="0.5"
-                      opacity="0.5" />
+                      stroke="#d0d0d0" 
+                      stroke-width="1"
+                      opacity="0.7" />
                 {# Y-axis tick mark #}
                 <line x1="45" 
                       y1="{{ grid_y }}" 
@@ -108,17 +108,14 @@
                       x2="{{ x_pos }}" 
                       y2="{{ chart_area_height + 5 }}"
                       class="chart-axis-line" />
-                <text x="{{ x_pos }}" 
-                      y="{{ chart_area_height + 20 }}" 
-                      class="chart-axis-text"
-                      text-anchor="middle"
-                      transform="rotate(-45, {{ x_pos }}, {{ chart_area_height + 20 }})">
-                    {% if label|length > 10 %}
-                        {{ label|slice:[0,10] }}...
-                    {% else %}
-                        {{ label }}
-                    {% endif %}
-                </text>
+                 <text x="{{ x_pos }}" 
+                       y="{{ chart_area_height + 20 }}" 
+                       class="chart-axis-text"
+                       text-anchor="middle"
+                       font-size="10"
+                       transform="rotate(-45, {{ x_pos }}, {{ chart_area_height + 20 }})">
+                     {{ label|date:"j M" }}
+                 </text>
                 {% endif %}
                 {% endwith %}
             {% endfor %}
