@@ -46,7 +46,10 @@
         <div class="analytics-grid-full">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Traffic by Hour of Day _}</h3>
+                    <h3 class="panel-title">
+                        {_ Traffic by Hour of Day _}
+                        <small class="text-muted">{_ (aggregated across all days) _}</small>
+                    </h3>
                 </div>
                 <div class="panel-body">
                     {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
