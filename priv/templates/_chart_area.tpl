@@ -40,14 +40,19 @@
                 </linearGradient>
             </defs>
             
-            {# Grid lines and Y-axis ticks #}
+            {# Grid lines and Y-axis ticks with better spacing #}
             {% for i in "01234" %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
+                {# Calculate tick value - using simple scaling from min to max #}
+                {% with min_val + (i * value_range) / 4 as tick_value %}
                 <line x1="50" 
                       y1="{{ grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" 
                       y2="{{ grid_y }}"
-                      class="chart-grid-line" />
+                      class="chart-grid-line" 
+                      stroke="#e0e0e0" 
+                      stroke-width="0.5"
+                      opacity="0.5" />
                 {# Y-axis tick mark #}
                 <line x1="45" 
                       y1="{{ grid_y }}" 
@@ -58,8 +63,9 @@
                       y="{{ grid_y + 4 }}" 
                       class="chart-axis-text"
                       text-anchor="end">
-                    {{ ((max_val - value_range) * i) / 4|round }}
+                    {{ tick_value|round }}
                 </text>
+                {% endwith %}
                 {% endwith %}
             {% endfor %}
             
@@ -89,10 +95,12 @@
                   stroke-width="2"
                   fill="none" />
             
-            {# X-axis labels and ticks #}
+            {# X-axis labels and ticks with better spacing #}
+            {# Calculate optimal tick interval - aim for 8-10 ticks maximum #}
+            {% with item_count / 8|max:1 as tick_interval %}
             {% for label, val in data %}
                 {% with forloop.counter0 * x_spacing + 50 as x_pos %}
-                {% if forloop.counter0|divisibleby:item_count / 5|max:1 %}
+                {% if forloop.counter0|divisibleby:tick_interval or forloop.first or forloop.last %}
                 {# X-axis tick mark #}
                 <line x1="{{ x_pos }}" 
                       y1="{{ chart_area_height }}" 
@@ -113,6 +121,7 @@
                 {% endif %}
                 {% endwith %}
             {% endfor %}
+            {% endwith %}
             {% endwith %}
             
             {# Y-axis #}
