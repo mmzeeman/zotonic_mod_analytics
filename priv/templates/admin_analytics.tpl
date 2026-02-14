@@ -195,18 +195,15 @@
     </div>
     {% endwith %}
 
-    {# Dispatch Rule Health Section - Collapsible #}
+    {# Dispatch Rule Health Section #}
     {% with m.analytics.dispatch_rule_health as health %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
-            <div class="panel panel-default panel-collapsible">
-                <div class="panel-heading" onclick="this.parentElement.querySelector('.panel-body').classList.toggle('hidden');">
-                    <h3 class="panel-title">
-                        {_ Dispatch Rule Health _}
-                        <span class="panel-collapse-icon">▼</span>
-                    </h3>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{_ Dispatch Rule Health _}</h3>
                 </div>
-                <div class="panel-body hidden" style="max-height: 400px; overflow-y: auto;">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
