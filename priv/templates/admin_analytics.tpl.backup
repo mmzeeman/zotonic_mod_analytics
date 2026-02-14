@@ -39,30 +39,6 @@
     </div>
     {% endwith %}
 
-    {# Unique Visitors Section - SVG Bar Chart #}
-    {% with m.analytics.unique_visitors as visitors %}
-    <div class="row" style="margin-bottom: 20px;">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
-                </div>
-                <div class="panel-body">
-                    {% include "_chart_bar.tpl"
-                        data=visitors
-                        title=""
-                        width=1000
-                        height=300
-                        color="#5bc0de"
-                        show_values=true
-                        label_format="j M"
-                    %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endwith %}
-
     {# Main Visualizations Grid #}
     <div class="analytics-grid">
         
@@ -138,6 +114,30 @@
         </div>
 
     </div>
+
+    {# Unique Visitors Section - SVG Bar Chart #}
+    {% with m.analytics.unique_visitors as visitors %}
+    <div class="row" style="margin-bottom: 20px;">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
+                </div>
+                <div class="panel-body">
+                    {% include "_chart_bar.tpl"
+                        data=visitors
+                        title=""
+                        width=1000
+                        height=300
+                        color="#5bc0de"
+                        show_values=true
+                        label_format="j M"
+                    %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
 
     {# User Activity Section #}
     {% with m.analytics.user_activity  as user_activity %}
