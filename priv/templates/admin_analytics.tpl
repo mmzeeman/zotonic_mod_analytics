@@ -141,18 +141,15 @@
     </div>
     {% endwith %}
 
-    {# User Activity Section - Collapsible #}
+    {# User Activity Section #}
     {% with m.analytics.user_activity  as user_activity %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
-            <div class="panel panel-default panel-collapsible">
-                <div class="panel-heading" onclick="this.parentElement.querySelector('.panel-body').classList.toggle('hidden');">
-                    <h3 class="panel-title">
-                        {_ User Activity _}
-                        <span class="panel-collapse-icon">▼</span>
-                    </h3>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{_ User Activity _}</h3>
                 </div>
-                <div class="panel-body hidden" style="max-height: 400px; overflow-y: auto;">
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover table-condensed">
                             <thead>
