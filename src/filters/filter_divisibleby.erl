@@ -33,39 +33,10 @@
 %% Returns true if Value mod Divisor == 0, false otherwise.
 %% Non-numeric or undefined values return false.
 %% Division by zero returns false.
-divisibleby(undefined, _Divisor, _Context) ->
-    false;
-divisibleby(_Value, undefined, _Context) ->
-    false;
-divisibleby(_Value, 0, _Context) ->
-    false;
+divisibleby(_Value, 0, _Context) -> false;
+divisibleby(_Value, +0.0, _Context) -> false;
+divisibleby(_Value, -0.0, _Context) -> false;
 divisibleby(Value, Divisor, _Context) when is_number(Value), is_number(Divisor) ->
     (trunc(Value) rem trunc(Divisor)) == 0;
-divisibleby(Value, Divisor, Context) when is_binary(Value) ->
-    try
-        NumValue = binary_to_integer(Value),
-        divisibleby(NumValue, Divisor, Context)
-    catch
-        _:_ ->
-            try
-                NumValue = trunc(binary_to_float(Value)),
-                divisibleby(NumValue, Divisor, Context)
-            catch
-                _:_ -> false
-            end
-    end;
-divisibleby(Value, Divisor, Context) when is_binary(Divisor) ->
-    try
-        NumDivisor = binary_to_integer(Divisor),
-        divisibleby(Value, NumDivisor, Context)
-    catch
-        _:_ ->
-            try
-                NumDivisor = trunc(binary_to_float(Divisor)),
-                divisibleby(Value, NumDivisor, Context)
-            catch
-                _:_ -> false
-            end
-    end;
 divisibleby(_Value, _Divisor, _Context) ->
     false.
