@@ -61,14 +61,12 @@
                     </h3>
                 </div>
                 <div class="panel-body">
-                    {% include "_chart_bar.tpl"
+                    {% include "_chart_area.tpl"
                         data=visitors
                         title=""
                         width=1000
                         height=300
-                        color="#5bc0de"
-                        show_values=true
-                        label_format="j M"
+                        gradient_colors="#5bc0de,#3a9cb8"
                     %}
                 </div>
             </div>
