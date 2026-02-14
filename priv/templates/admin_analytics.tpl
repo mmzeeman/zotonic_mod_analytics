@@ -4,6 +4,8 @@
 
 {% block content %}
 
+{% lib "css/analytics.css" %}
+
 <div class="admin-header">
     <h2>{_ Analytics _}</h2>
     <p>{_ This page shows site analytics. _}</p>
@@ -37,46 +39,105 @@
     </div>
     {% endwith %}
 
-    {# Unique Visitors Section #}
+    {# Unique Visitors Section - SVG Bar Chart #}
     {% with m.analytics.unique_visitors as visitors %}
-    {% with visitors | values | max as max_sessions %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Unique Visitors _}</h3>
+                    <h3 class="panel-title">{_ Unique Visitors (30 days) _}</h3>
                 </div>
-                <div class="panel-body" style="padding: 15px 15px 50px 15px;">
-                    <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 280px;">
-                        {% for day, unique_sessions in visitors %}
-                        <div style="display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 40px; position: relative;">
-                            <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 260px; width: 100%;">
-                                <div style="background-color: #5bc0de; position: relative; width: 100%; 
-                                            height: {% if max_sessions > 0 %}{{ (unique_sessions * 100) / max_sessions }}%{% else %}0%{% endif %}; 
-                                            min-height: 20px; border-radius: 3px 3px 0 0;"
-                                     role="progressbar" 
-                                     aria-valuenow="{{ unique_sessions }}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="{{ max_sessions }}">
-                                    <div style="position: absolute; top: 5px; width: 100%; text-align: center; 
-                                                font-size: 9px; font-weight: 700; color: #2c5d6f;">
-                                        {{ unique_sessions }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%) rotate(-45deg); 
-                                        transform-origin: center center; white-space: nowrap; font-size: 9px; font-weight: 500;">
-                                {{ day | date:"j M" }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+                <div class="panel-body">
+                    {% include "_chart_bar.tpl"
+                        data=visitors
+                        title=""
+                        width=1000
+                        height=300
+                        color="#5bc0de"
+                        show_values=true
+                        label_format="j M"
+                    %}
                 </div>
             </div>
         </div>
     </div>
     {% endwith %}
-    {% endwith %}
+
+    {# Main Visualizations Grid #}
+    <div class="analytics-grid">
+        
+        {# Panel: Traffic by Hour of Day #}
+        <div class="analytics-grid-full">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        {_ Traffic by Hour of Day _}
+                        <small class="text-muted">{_ (aggregated across all days) _}</small>
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
+                    {% if hourly_data %}
+                        {% with hourly_data|element:1 as hours %}
+                        {% with hourly_data|element:2 as requests %}
+                        {% with hours|zip:requests as chart_data %}
+                        {% include "_chart_bar.tpl" 
+                            data=chart_data 
+                            title=""
+                            height=280
+                            width=800
+                            show_grid=1
+                            show_values=1 %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="chart-empty">
+                            <div class="chart-empty-icon">📊</div>
+                            <div class="chart-empty-text">{_ No hourly traffic data available _}</div>
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+        {# Error Breakdown Section #}
+        <div class="analytics-grid-full">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{_ Error Breakdown _}</h3>
+                </div>
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                    {% with m.analytics.error_breakdown as error_data %}
+                    {% if error_data %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>{_ Error Type _}</th>
+                                        <th>{_ Count _}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for error_type, count in error_data %}
+                                    <tr>
+                                        <td>{{ error_type }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">{_ No errors found _}</p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     {# User Activity Section #}
     {% with m.analytics.user_activity  as user_activity %}
@@ -172,7 +233,7 @@
     </div>
     {% endwith %}
 
-        {# Popular Pages Section #}
+    {# Popular Pages Section #}
     {% with m.analytics.popular_pages as popular %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
