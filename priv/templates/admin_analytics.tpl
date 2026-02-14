@@ -18,6 +18,47 @@
 
 <div class="container-fluid">
 
+    {# Unique Visitors Stat Card #}
+    {% with m.analytics.unique_visitors as visitors_data %}
+        {% with visitors_data | values:2 as visitor_values %}
+            {% if visitor_values %}
+                {% with visitor_values | last as current_value %}
+                    {% with visitor_values | first as first_value %}
+                        {# Calculate percentage change: ((current - first) / first * 100) #}
+                        {% if first_value > 0 %}
+                            {% with ((current_value - first_value) * 100 / first_value) | round as change_percent %}
+                                <div class="row" style="margin-bottom: 20px;">
+                                    <div class="col-lg-3 col-md-4 col-sm-6">
+                                        {% include "_stat_card.tpl" 
+                                            label=_"Unique Visitors"
+                                            value=current_value
+                                            change_percent=change_percent
+                                            trend_data=visitor_values
+                                        %}
+                                    </div>
+                                </div>
+                            {% endwith %}
+                        {% else %}
+                            <div class="row" style="margin-bottom: 20px;">
+                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                    {% include "_stat_card.tpl" 
+                                        label=_"Unique Visitors"
+                                        value=current_value
+                                        trend_data=visitor_values
+                                    %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                {% endwith %}
+            {% endif %}
+        {% endwith %}
+    {% endwith %}
+
+</div>
+
+<div class="container-fluid">
+
     {# Stats Overview Section - Responsive Panel Grid #}
     {% with m.analytics.stats_overview as stats_overview %}
     <div class="panel panel-default">
