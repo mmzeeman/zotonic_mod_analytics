@@ -17,7 +17,8 @@
 {% if item_count > 0 %}
     {% with data|element:2|max as max_val %}
     {% with chart_width - 80 as chart_area_width %}
-    {% with chart_height - 40 as chart_area_height %}
+    {% with chart_height - 60 as chart_area_height %}
+    {% with 20 as top_padding %}
     {% with chart_area_width / item_count as bar_spacing %}
     {% with bar_spacing * 0.7 as bar_width %}
     
@@ -37,12 +38,12 @@
                 {% for i in "0123" %}
                     {% with ((i + 1) * chart_area_height) / 4 as grid_y %}
                     <line x1="50" 
-                          y1="{{ grid_y }}" 
+                          y1="{{ top_padding + grid_y }}" 
                           x2="{{ chart_area_width + 50 }}" 
-                          y2="{{ grid_y }}"
+                          y2="{{ top_padding + grid_y }}"
                           class="chart-grid-line" />
                     <text x="45" 
-                          y="{{ grid_y + 4 }}" 
+                          y="{{ top_padding + grid_y + 4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
                         {{ ((max_val * 3 - max_val) * i) / 3|round }}
@@ -55,7 +56,7 @@
             {% for label, val in data %}
                 {% with forloop.counter0 * bar_spacing + 50 as x_pos %}
                 {% with (val / max_val) * chart_area_height as bar_height_calc %}
-                {% with chart_area_height - bar_height_calc as bar_y %}
+                {% with top_padding + chart_area_height - bar_height_calc as bar_y %}
                 
                 <g class="chart-bar-group">
                     {# Bar #}
@@ -81,10 +82,10 @@
                     
                     {# Label at bottom #}
                     <text x="{{ x_pos + bar_spacing / 2 }}" 
-                          y="{{ chart_area_height + 25 }}" 
+                          y="{{ top_padding + chart_area_height + 25 }}" 
                           class="chart-axis-text"
                           text-anchor="middle"
-                          transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ chart_area_height + 25 }})">
+                          transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ top_padding + chart_area_height + 25 }})">
                         {% if label|length > 10 %}
                             {{ label|slice:[0,10] }}...
                             <title>{{ label }}</title>
@@ -101,13 +102,14 @@
             
             {# X-axis #}
             <line x1="50" 
-                  y1="{{ chart_area_height }}" 
+                  y1="{{ top_padding + chart_area_height }}" 
                   x2="{{ chart_area_width + 50 }}" 
-                  y2="{{ chart_area_height }}"
+                  y2="{{ top_padding + chart_area_height }}"
                   class="chart-axis-line" />
         </svg>
     </div>
     
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}
