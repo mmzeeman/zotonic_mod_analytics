@@ -43,8 +43,8 @@
             {# Grid lines and Y-axis ticks with better spacing #}
             {% for i in [0, 1, 2, 3, 4] %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
-                {# Calculate tick value - using simple scaling from min to max #}
-                {% with min_val + (i * value_range) / 4 as tick_value %}
+                {# Calculate tick value - max at top (y=0), min at bottom #}
+                {% with max_val - (i * value_range) / 4 as tick_value %}
                 <line x1="50" 
                       y1="{{ grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" 
