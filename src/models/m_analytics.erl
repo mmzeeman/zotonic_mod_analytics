@@ -788,20 +788,32 @@ hourly_traffic(Context) ->
 hourly_traffic(From, Until, Context) ->
     Site = z_context:site(Context),
     Q = <<"
+    WITH all_hours AS (
+        SELECT unnest(generate_series(0, 23)) as hour_of_day
+    ),
+    hourly_data AS (
+        SELECT 
+            hour(timestamp) as hour_of_day,
+            count(*) as requests
+        FROM 
+            access_log
+        WHERE 
+            site = $site
+            AND timestamp >= $from
+            AND timestamp <= $until
+            AND ", (no_bots_clause())/binary, "
+        GROUP BY 
+            hour_of_day
+    )
     SELECT 
-        hour(timestamp) as hour_of_day,
-        count(*) as requests
+        all_hours.hour_of_day,
+        COALESCE(hourly_data.requests, 0) as requests
     FROM 
-        access_log
-    WHERE 
-        site = $site
-        AND timestamp >= $from
-        AND timestamp <= $until
-        AND ", (no_bots_clause())/binary, "
-    GROUP BY 
-        hour_of_day
+        all_hours
+    LEFT JOIN 
+        hourly_data ON all_hours.hour_of_day = hourly_data.hour_of_day
     ORDER BY 
-        hour_of_day
+        all_hours.hour_of_day
     ">>,
     
     case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
