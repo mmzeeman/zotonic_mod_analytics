@@ -88,13 +88,13 @@
                     </text>
                     {% endif %}
                     
-                    {# Label at bottom and X-axis tick #}
                     {# X-axis tick mark #}
                     <line x1="{{ x_pos + bar_spacing / 2 }}" 
                           y1="{{ top_padding + chart_area_height }}" 
                           x2="{{ x_pos + bar_spacing / 2 }}" 
                           y2="{{ top_padding + chart_area_height + 5 }}"
                           class="chart-axis-line" />
+                    {# Label at bottom #}
                     <text x="{{ x_pos + bar_spacing / 2 }}" 
                           y="{{ top_padding + chart_area_height + 25 }}" 
                           class="chart-axis-text"
