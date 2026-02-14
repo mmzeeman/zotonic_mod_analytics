@@ -38,10 +38,12 @@ is_authorized(Context) ->
 process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     % Get the date range parameter (default to 28d)
     Range = z_context:get_q(<<"range">>, Context, <<"28d">>),
+    % Set active_range in context so model can access it
+    Context1 = z_context:set(active_range, Range, Context),
     Vars = [
         {page_admin_statistics, true},
         {active_range, Range}
     ],
-    Html = z_template:render("admin_analytics.tpl", Vars, Context),
-    z_context:output(Html, Context).
+    Html = z_template:render("admin_analytics.tpl", Vars, Context1),
+    z_context:output(Html, Context1).
 
