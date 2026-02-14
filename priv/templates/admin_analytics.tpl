@@ -13,85 +13,28 @@
 
 <div class="container-fluid">
 
-    {# Key Metrics Cards - Top Section #}
+    {# Stats Overview Section - Responsive Panel Grid #}
     {% with m.analytics.stats_overview as stats_overview %}
-    <div class="stat-cards-grid">
-        <div class="col-lg-3 col-md-6 col-sm-6">
-            {% with stats_overview | values:2 as requests_data %}
-            {% with requests_data | last as current_requests %}
-            {% with requests_data | length as data_length %}
-            {% if data_length > 1 %}
-                {% with requests_data | slice:[0,-2] | last as prev_requests %}
-                {% with prev_requests > 0 as has_prev %}
-                {% if has_prev %}
-                    {% with ((current_requests - prev_requests) / prev_requests) * 100|round as change_pct %}
-                    {% include "_stat_card.tpl" 
-                        value=current_requests 
-                        label=_"Total Requests"
-                        trend_data=requests_data
-                        change_percent=change_pct
-                        icon="📊" %}
-                    {% endwith %}
-                {% else %}
-                    {% include "_stat_card.tpl" 
-                        value=current_requests 
-                        label=_"Total Requests"
-                        trend_data=requests_data
-                        icon="📊" %}
-                {% endif %}
-                {% endwith %}
-                {% endwith %}
-            {% else %}
-                {% include "_stat_card.tpl" 
-                    value=current_requests 
-                    label=_"Total Requests"
-                    trend_data=requests_data
-                    icon="📊" %}
-            {% endif %}
-            {% endwith %}
-            {% endwith %}
-            {% endwith %}
-        </div>
-        
-        <div class="col-lg-3 col-md-6 col-sm-6">
-            {% with stats_overview | values:5 as sessions_data %}
-            {% with sessions_data | last as current_sessions %}
-            {% include "_stat_card.tpl" 
-                value=current_sessions 
-                label=_"Sessions"
-                trend_data=sessions_data
-                icon="👥" %}
-            {% endwith %}
-            {% endwith %}
-        </div>
-        
-        <div class="col-lg-3 col-md-6 col-sm-6">
-            {% with stats_overview | values:4 as users_data %}
-            {% with users_data | last as current_users %}
-            {% include "_stat_card.tpl" 
-                value=current_users 
-                label=_"Unique Visitors"
-                trend_data=users_data
-                icon="👤" %}
-            {% endwith %}
-            {% endwith %}
-        </div>
-        
-        <div class="col-lg-3 col-md-6 col-sm-6">
-            {% with stats_overview | values:7 as client_errors %}
-            {% with stats_overview | values:8 as server_errors %}
-            {% with client_errors | last as current_client_errors %}
-            {% with server_errors | last as current_server_errors %}
-            {% with current_client_errors + current_server_errors as total_errors %}
-            {% include "_stat_card.tpl" 
-                value=total_errors 
-                label=_"Errors"
-                icon="⚠️" %}
-            {% endwith %}
-            {% endwith %}
-            {% endwith %}
-            {% endwith %}
-            {% endwith %}
+    <div class="panel panel-default">
+        <div class="panel-body row align-items-center">
+            {# A bit weird.. duckdb retrieves data in columns, it is transposed, and now it transposed back again #}
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:2) title=_"Requests" %}
+                <br>
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:3) title=_"Resources Visited" %}
+                <br>
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:6) title=_"Data Out" units=_"Mb" %}
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6">
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:5) title=_"Sessions" %}
+                <br>
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:4) title=_"Users" %}
+            </div>
+            <div class="col-log-3 col-md-4 col-sm-6">
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:7) title=_"Client Errors" %}
+                <br>
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:8) title=_"Server Errors" %}
+            </div>
         </div>
     </div>
     {% endwith %}
