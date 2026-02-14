@@ -25,7 +25,7 @@
                 {% with visitor_values | last as current_value %}
                     {% with visitor_values | first as first_value %}
                         {# Calculate percentage change: ((current - first) / first * 100) #}
-                        {% with first_value > 0 and ((current_value - first_value) * 100 / first_value) | round as change_percent %}
+                        {% with first_value > 0 and ((current_value - first_value) * 100.0 / first_value) | round as change_percent %}
                             <div class="row" style="margin-bottom: 20px;">
                                 <div class="col-lg-3 col-md-4 col-sm-6">
                                     {% include "_stat_card.tpl" 
