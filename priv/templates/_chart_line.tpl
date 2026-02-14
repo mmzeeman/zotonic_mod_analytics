@@ -38,6 +38,8 @@
             {% if display_grid and value_range > 0 %}
                 {% for i in "01234" %}
                     {% with (i * chart_area_height) / 4 as grid_y %}
+                    {# Calculate tick value - max at top (y=0), min at bottom #}
+                    {% with max_val - (i * value_range) / 4 as tick_value %}
                     <line x1="50" 
                           y1="{{ grid_y }}" 
                           x2="{{ chart_area_width + 50 }}" 
@@ -53,8 +55,9 @@
                           y="{{ grid_y + 4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
-                        {{ ((max_val - value_range) * i) / 4|round }}
+                        {{ tick_value|round }}
                     </text>
+                    {% endwith %}
                     {% endwith %}
                 {% endfor %}
             {% endif %}
