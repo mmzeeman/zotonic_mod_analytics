@@ -42,10 +42,12 @@
     stroke-linejoin: round;
 }
 
+/*
 .chart-area {
     fill: var(--color-primary);
     opacity: 0.3;
 }
+*/
 
 .chart-bar {
     fill: var(--color-primary);

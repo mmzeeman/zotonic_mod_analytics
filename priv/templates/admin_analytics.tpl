@@ -66,7 +66,7 @@
                         title=""
                         width=1000
                         height=300
-                        gradient_colors="#5bc0de,#3a9cb8"
+                        gradient_colors=["#5bc0de", "#3a9cb8"]
                         y_axis_label=_"Visitors"
                         x_axis_label=_"Date"
                     %}
