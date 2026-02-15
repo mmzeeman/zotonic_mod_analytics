@@ -47,7 +47,7 @@
             {% for i in [0, 1, 2, 3, 4] %}
                 {% with (i * chart_area_height) / 4 as grid_y %}
                 {# Calculate tick value - nice_max at top (y=0), min at bottom #}
-                {% with nice_max - (i * value_range) / 4 as tick_value %}
+                {% with nice_max - (i * nice_max) / 4 as tick_value %}
                 <line x1="50" 
                       y1="{{ top_padding + grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" 
@@ -67,7 +67,7 @@
                       class="chart-axis-text"
                       text-anchor="end"
                       font-size="11">
-                    {{ tick_value|round }}
+                    {{ tick_value | round }}
                 </text>
                 {% endwith %}
                 {% endwith %}
