@@ -61,8 +61,7 @@
                       class="chart-axis-line" />
                 <text x="43" y="{{ top_padding + grid_y + 4 }}" 
                       class="chart-axis-text"
-                      text-anchor="end"
-                      font-size="11">
+                      text-anchor="end">
                     {% with tick_value | round as rounded_tick_value %} 
                     {% if ((tick_value - rounded_tick_value) | abs) < 0.01 %}{{ rounded_tick_value }}{% endif %}
                     {% endwith %}
@@ -115,7 +114,6 @@
                        y="{{ top_padding + chart_area_height + 20 }}" 
                        class="chart-axis-text"
                        text-anchor="middle"
-                       font-size="10"
                        transform="rotate(-45, {{ x_pos }}, {{ top_padding + chart_area_height + 20 }})">
                      {{ label | date:"j M" }}
                  </text>

@@ -77,9 +77,8 @@
 }
 
 .chart-value-text {
-    font-size: 12px;
+    font-size: 11px;
     fill: var(--color-gray-dark);
-    font-weight: 500;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 

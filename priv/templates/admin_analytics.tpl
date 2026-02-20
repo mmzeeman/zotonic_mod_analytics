@@ -97,8 +97,8 @@
                         {% include "_chart_bar.tpl" 
                             data=chart_data 
                             title=""
-                            height=280
-                            width=800
+                            height=300
+                            width=1000
                             show_grid=1
                             show_values=1
                             y_axis_label=_"Requests"
