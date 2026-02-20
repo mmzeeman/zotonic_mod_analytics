@@ -7,12 +7,14 @@
    - gradient_colors: array of [start_color, end_color] (default: ["#5bc0de", "#3a9cb8"])
    - x_axis_label: label for x-axis (optional)
    - y_axis_label: label for y-axis (optional)
+   - y_tick_count: Number of ticks on the y-axis, excluding the origin (optiona)
 #}
 {% with width | default:600 as chart_width %}
 {% with height | default:300 as chart_height %}
 {% with gradient_colors | default:["#5bc0de", "#3a9cb8"] as colors %}
 {% with colors[1] as start_color %}
 {% with colors[2] as end_color %}
+{% with y_tick_count | default:5 as y_tick_count  %}
 {% if data | length as item_count %}
     {% with data | element:2 | max as max_val %}
     {% with data | element:2 | min as min_val %}
@@ -43,10 +45,10 @@
             </defs>
             
             {# Grid lines and Y-axis ticks with better spacing #}
-            {% for i in [0, 1, 2, 3, 4] %}
-                {% with (i * chart_area_height) / 4 as grid_y %}
+            {% for i in (0 | range:y_tick_count) %}
+                {% with (i * chart_area_height) / y_tick_count as grid_y %}
                 {# Calculate tick value - nice_max at top (y=0), min at bottom #}
-                {% with nice_max - (i * nice_max) / 4 as tick_value %}
+                {% with nice_max - (i * nice_max) / y_tick_count  as tick_value %}
                 <line x1="50" y1="{{ top_padding + grid_y }}" 
                       x2="{{ chart_area_width + 50 }}" y2="{{ top_padding + grid_y }}"
                       class="chart-grid-line" 
@@ -99,7 +101,7 @@
             
             {# X-axis labels and ticks with better spacing #}
             {# Calculate optimal tick interval - aim for 8-10 ticks maximum #}
-            {% with (item_count / 8) | max:1 as tick_interval %}
+            {% with (item_count / 8) | max:1 | round as tick_interval %}
             {% for label, val in data %}
                 {% with forloop.counter0 * x_spacing + 50 as x_pos %}
                 {% if (forloop.counter0 | divisibleby:tick_interval) or forloop.first or forloop.last %}
@@ -174,6 +176,7 @@
         <div class="chart-empty-text">{_ No data available _}</div>
     </div>
 {% endif %}
+{% endwith %}
 {% endwith %}
 {% endwith %}
 {% endwith %}
