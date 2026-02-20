@@ -72,7 +72,7 @@
             {% endfor %}
             
             {# Build area path #}
-            {% with chart_area_width / item_count - 1 as x_spacing %}
+            {% with chart_area_width / (item_count - 1) as x_spacing %}
             {# Calculate last data point x position #}
             {% with (item_count - 1) * x_spacing + 50 as last_x %}
             <path class="chart-area"
