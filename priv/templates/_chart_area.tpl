@@ -127,23 +127,18 @@
             {% endwith %}
             
             {# Y-axis #}
-            <line x1="50" 
-                  y1="{{ top_padding }}" 
-                  x2="50" 
-                  y2="{{ top_padding + chart_area_height }}"
+            <line x1="50" y1="{{ top_padding }}" 
+                  x2="50" y2="{{ top_padding + chart_area_height }}"
                   class="chart-axis-line" />
             
             {# X-axis #}
-            <line x1="50" 
-                  y1="{{ top_padding + chart_area_height }}" 
-                  x2="{{ chart_area_width + 50 }}" 
-                  y2="{{ top_padding + chart_area_height }}"
+            <line x1="50" y1="{{ top_padding + chart_area_height }}" 
+                  x2="{{ chart_area_width + 50 }}" y2="{{ top_padding + chart_area_height }}"
                   class="chart-axis-line" />
             
             {# Y-axis label #}
             {% if y_axis_label %}
-            <text x="15" 
-                  y="{{ top_padding + chart_area_height / 2 }}" 
+            <text x="15" y="{{ top_padding + chart_area_height / 2 }}" 
                   class="chart-axis-label"
                   text-anchor="middle"
                   transform="rotate(-90, 15, {{ top_padding + chart_area_height / 2 }})">
