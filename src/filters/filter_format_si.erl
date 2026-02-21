@@ -13,34 +13,36 @@
 
 -export([format_si/2]).
 
+-define(T, 1000000000000).
+-define(G, 1000000000).
+-define(M, 1000000).
+-define(k, 1000).
+
 %% Return a compact SI-formatted string for numbers.
+format_si(undefined, _Context) ->
+    undefined;
 format_si(Value, _Context) when is_number(Value) ->
-    format_number(Value);
-format_si(Value, _Context) ->
-    % Fallback: return the unchanged value
-    Value.
+    format_number(Value).
 
-%% Internal: choose suffix and format
+format_number(Value) when is_float(Value) ->
+    case is_almost_integer(Value) of
+        true -> format_number1(round(Value));
+        false -> format_number1(Value)
+    end;
 format_number(Value) ->
-    Abs = abs(Value),
-    {Factor, Suffix} = case is_almost_integer(Abs) of
-               true -> choose_factor(round(Abs));
-               false -> choose_factor(Abs)
-           end,
-    case Factor of
-        1 ->
-            format(Value);
-        _ ->
-            Scaled = Value / Factor,
-            Formatted = format(Scaled),
-            <<Formatted/binary, Suffix/binary>>
-    end.
+    format_number1(Value).
 
-choose_factor(Abs) when Abs >= 1000000000000 -> {1000000000000, <<"T">>};
-choose_factor(Abs) when Abs >= 1000000000 -> {1000000000000, <<"G">>};
-choose_factor(Abs) when Abs >= 1000000 -> {1000000, <<"M">>};
-choose_factor(Abs) when Abs >= 1000 -> {1000, <<"k">>};
-choose_factor(Abs) when Abs >= 1 -> {1, <<"">>}.
+format_number1(Value) ->
+    {Factor, Suffix} = choose_factor(abs(Value)),
+    Scaled = Value / Factor,
+    Formatted = format(Scaled),
+    <<Formatted/binary, Suffix/binary>>.
+
+choose_factor(Abs) when Abs >= ?T -> {?T, <<"T">>};
+choose_factor(Abs) when Abs >= ?G -> {?G, <<"G">>};
+choose_factor(Abs) when Abs >= ?M -> {?M, <<"M">>};
+choose_factor(Abs) when Abs >= ?k -> {?k, <<"k">>};
+choose_factor(_Abs) -> {1, <<"">>}.
 
 format(Value) when is_integer(Value) ->
     integer_to_binary(Value);

@@ -52,7 +52,7 @@
                     <text x="43" y="{{ top_padding + grid_y + 4 }}" 
                           class="chart-axis-text"
                           text-anchor="end">
-                        {{ tick_value|round }}
+                        {{ tick_value | format_si }}
                     </text>
                     {% endwith %}
                     {% endwith %}
@@ -96,9 +96,9 @@
                           text-anchor="middle"
                           transform="rotate(-45, {{ x_pos + bar_spacing / 2 }}, {{ top_padding + chart_area_height + 25 }})">
                         {% if label_format %}
-                            {{ label|date:label_format }}
+                            {{ label | date:label_format }}
                         {% else %}
-                            {{ label }}
+                            {{ label | format_si }}
                         {% endif %}
                     </text>
                 </g>

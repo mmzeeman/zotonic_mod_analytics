@@ -62,9 +62,7 @@
                 <text x="43" y="{{ top_padding + grid_y + 4 }}" 
                       class="chart-axis-text"
                       text-anchor="end">
-                    {% with tick_value | round as rounded_tick_value %} 
-                    {% if ((tick_value - rounded_tick_value) | abs) < 0.01 %}{{ rounded_tick_value }}{% endif %}
-                    {% endwith %}
+                    {{ tick_value | format_si }}
                 </text>
                 {% endwith %}
                 {% endwith %}
