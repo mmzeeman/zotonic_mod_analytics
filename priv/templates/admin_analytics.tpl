@@ -31,7 +31,7 @@
                 {% include "_sparkline_with_title.tpl" values = (stats_overview | values:6) title=_"Data Out" units=_"Mb" %}
             </div>
             <div class="col-lg-3 col-md-4 col-sm-6">
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:5) title=_"Sessions" %}
+                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:5) title=_"Unique Visitors" %}
                 <br>
                 {% include "_sparkline_with_title.tpl" values = (stats_overview | values:4) title=_"Users" %}
             </div>
