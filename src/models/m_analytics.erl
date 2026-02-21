@@ -341,7 +341,8 @@ WITH
             site = $site
             AND timestamp >= $from
             AND timestamp <= $until
-        GROUP BY
+            AND ", (no_bots_clause())/binary,
+"       GROUP BY
             day
     )
 SELECT
@@ -378,7 +379,8 @@ erroring_pages(From, Until, Context) ->
 SELECT
     path,
     count(*),
-    count(distinct session_id),count(distinct user_id)
+    count(distinct session_id),
+    count(distinct user_id)
 FROM
     access_log
 WHERE
