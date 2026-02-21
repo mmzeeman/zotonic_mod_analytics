@@ -91,9 +91,10 @@
                 <div class="panel-body">
                     {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
                     {% if hourly_data %}
-                        {% with hourly_data|element:1 as hours %}
-                        {% with hourly_data|element:2 as requests %}
-                        {% with hours|zip:requests as chart_data %}
+                        {{ hourly_data | pprint }}
+                        {% with hourly_data | element:1 as hours %}
+                        {% with hourly_data | element:2 as requests %}
+                        {% with hours | zip:requests as chart_data %}
                         {% include "_chart_bar.tpl" 
                             data=chart_data 
                             title=""
@@ -102,6 +103,22 @@
                             show_grid=1
                             show_values=1
                             y_axis_label=_"Requests"
+                            x_axis_label=_"Hour of Day" %}
+                        {% endwith %}
+                        {% endwith %}
+                        {% endwith %}
+
+                        {% with hourly_data | element:1 as hours %}
+                        {% with hourly_data | element:3 as requests %}
+                        {% with hours | zip:requests as chart_data %}
+                        {% include "_chart_bar.tpl" 
+                            data=chart_data 
+                            title=""
+                            height=300
+                            width=1000
+                            show_grid=1
+                            show_values=1
+                            y_axis_label=_"Unique Visitors"
                             x_axis_label=_"Hour of Day" %}
                         {% endwith %}
                         {% endwith %}
