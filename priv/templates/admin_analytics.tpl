@@ -91,7 +91,6 @@
                 <div class="panel-body">
                     {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
                     {% if hourly_data %}
-                        {{ hourly_data | pprint }}
                         {% with hourly_data | element:1 as hours %}
                         {% with hourly_data | element:2 as requests %}
                         {% with hours | zip:requests as chart_data %}
