@@ -31,15 +31,15 @@
 
 <div class="row">
     <div class="col-md-12">
-        {% wire id="rsc-stats-details-btn"
+        {% wire id=#stats
                 action={dialog_open title=_"Detailed Analytics"
                                     width="large"
                                     template="_dialog_admin_rsc_stat_details.tpl"
                                     id=id }
         %}
-        <button id="rsc-stats-details-btn" class="btn btn-primary btn-block">
+        <a href="#stats" id="{{ #stats }}" class="btn btn-primary btn-block" role="button">
             <span class="glyphicon glyphicon-list-alt"></span> {_ Show Detailed Analytics _}
-        </button>
+        </a>
     </div>
 </div>
 {% endwith %}

@@ -33,7 +33,7 @@ service_available(Context) ->
     {true, Context2}.
 
 is_authorized(Context) ->
-    z_controller_helper:is_authorized([ {use, z_context:get(acl_module, Context, mod_ducklog)} ], Context).
+    z_controller_helper:is_authorized([ {use, z_context:get(acl_module, Context, mod_analytics)} ], Context).
 
 process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     % Get the date range parameter (default to 28d)

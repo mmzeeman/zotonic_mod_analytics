@@ -2,19 +2,22 @@
    Parameters:
    - active_range: currently active range as a binary/string (e.g., "7d", "28d", "91d")
 #}
-{% with active_range|default:"28d" as current_range %}
-<div class="time-range-selector">
-    <a href="?range=7d" class="time-range-btn {% if current_range == "7d" %}active{% endif %}" 
-       title="{_ Last 7 days _}">
-        {_ Last 7 days _}
-    </a>
-    <a href="?range=28d" class="time-range-btn {% if current_range == "28d" %}active{% endif %}" 
-       title="{_ Last 28 days _}">
-        {_ Last 28 days _}
-    </a>
-    <a href="?range=91d" class="time-range-btn {% if current_range == "91d" %}active{% endif %}" 
-       title="{_ Last 91 days _}">
-        {_ Last 91 days _}
-    </a>
+{% with active_range | default:"28d" as current_range %}
+<div class="dropdown pull-right">
+    <button class="btn btn-default dropdown-toggle" type="button" id="{{ #range }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        {% if current_range == "7d" %}
+            {_ Last 7 days _}
+        {% elif current_range == "28d" %}
+            {_ Last 28 days _}
+        {% elif current_range == "91d" %}
+            {_ Last 91 days _}
+        {% endif %}
+    <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu" aria-labelledby="{{ #range }}">
+      <li {% if current_range == "7d" %}class="active"{% endif %}><a href="{% url admin_analytics range="7d" %}">{_ Last 7 days _}</a></li>
+      <li {% if current_range == "28d" %}class="active"{% endif %}><a href="{% url admin_analytics range="28d" %}">{_ Last 28 days _}</a></li>
+      <li {% if current_range == "91d" %}class="active"{% endif %}><a href="{% url admin_analytics range="91d" %}">{_ Last 91 days _}</a></li>
+  </ul>
 </div>
 {% endwith %}

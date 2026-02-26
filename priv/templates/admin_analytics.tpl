@@ -44,6 +44,29 @@
     </div>
     {% endwith %}
 
+    {% with m.analytics.stats_overview as stats_overview %}
+    <div class="row">
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Requests" value="12.5k" trend_data=(stats_overview | values:2) %}
+        </div>
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Resources Visited" value="122.5k" trend_data=(stats_overview | values:3) %}
+        </div>
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Data Out" value="12.5k" trend_data=(stats_overview | values:6) %}
+        </div>
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Unique Visitors" value="12.5k" trend_data=(stats_overview | values:5) %}
+        </div>
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Users" value="12.5k" trend_data=(stats_overview | values:4)%}
+        </div>
+        <div class="col-md-2 col-sm-4 col-xs-6">
+            {% include "_card_simple_stat.tpl" title="Server Errors" value="12.5k" trend_data=(stats_overview | values:8)%}
+        </div>
+    </div>
+    {% endwith %}
+
     {# Unique Visitors Section - SVG Bar Chart #}
     {% with m.analytics.unique_visitors as visitors %}
     <div class="row" style="margin-bottom: 20px;">
