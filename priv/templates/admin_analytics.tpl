@@ -18,37 +18,15 @@
 
 <div class="container-fluid">
 
-    {# Stats Overview Section - Responsive Panel Grid #}
-    {% with m.analytics.stats_overview as stats_overview %}
-    <div class="panel panel-default">
-        <div class="panel-body row align-items-center">
-            {# A bit weird.. duckdb retrieves data in columns, it is transposed, and now it transposed back again #}
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:2) title=_"Requests" %}
-                <br>
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:3) title=_"Resources Visited" %}
-                <br>
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:6) title=_"Data Out" units=_"Mb" %}
-            </div>
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:5) title=_"Unique Visitors" %}
-                <br>
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:4) title=_"Users" %}
-            </div>
-            <div class="col-log-3 col-md-4 col-sm-6">
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:7) title=_"Client Errors" %}
-                <br>
-                {% include "_sparkline_with_title.tpl" values = (stats_overview | values:8) title=_"Server Errors" %}
-            </div>
-        </div>
-    </div>
-    {% endwith %}
-
     {% with m.analytics.stats_overview as stats_overview %}
     <div class="row">
         <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Requests" value="12.5k" trend_data=(stats_overview | values:2) %}
+            {% with m.analytics.unique_visitors as visitors %}
+            {{ visitors | pprint }}
+            {% include "_card_simple_stat.tpl" title="Unique Visitors" value=visitors|element:1 trend_data=(stats_overview | values:2) %}
+            {% endwith %}
         </div>
+
         <div class="col-md-2 col-sm-4 col-xs-6">
             {% include "_card_simple_stat.tpl" title="Resources Visited" value="122.5k" trend_data=(stats_overview | values:3) %}
         </div>

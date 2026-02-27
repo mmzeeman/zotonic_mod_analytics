@@ -25,6 +25,8 @@
 ]).
 
 -export([
+         overview/1,
+
     totals_overview/1, totals_overview/3,
     stats_overview/1, stats_overview/3,
     rsc_stats_overview/2, rsc_stats_overview/4,
@@ -64,6 +66,9 @@
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 %% TODO add access control to the api.
+
+m_get([<<"overview">> | Rest], _Msg, Context) ->
+    {ok, {overview(Context), Rest}};
 
 m_get([<<"totals_overview">> | Rest], _Msg, Context) ->
     {ok, {totals_overview(Context), Rest}};
@@ -228,7 +233,43 @@ WHERE site = $site
             []
     end.
 
+overview(Context) ->
+    Query = <<"
+        SELECT
+            date_trunc('day', timestamp) AS day,
+            count(DISTINCT visitor_id) AS visitors, 
+            count(DISTINCT session_id) AS sessions,
+            count(DISTINCT rsc_id) AS rscs, 
+            count(DISTINCT user_id) AS users 
+        FROM
+            visitor_ids 
+        GROUP BY
+            day
 
+        UNION ALL
+
+        SELECT
+             NULL as day,
+             count(DISTINCT visitor_id) AS visitor,
+             count(DISTINCT session_id) AS sessions,
+             count(DISTINCT rsc_id) AS rscs, 
+             count(DISTINCT user_id) AS users 
+        FROM
+            visitor_ids
+
+        ORDER BY
+            day NULLS last;
+">>,
+
+    select(Query,
+           [
+            cte(site_filtered, site_filter(access_log)),
+            cte(time_filtered, time_filter(site_filtered)),
+            cte(successes, success_filtered(time_filtered)),
+
+            cte(visitor_ids, visitor_ids(successes))
+           ],
+           Context).
 
 stats_overview(Context) ->
     {From, Until} = get_date_range(Context),
@@ -367,15 +408,21 @@ unique_visitors(Context) ->
     unique_visitors(From, Until, Context).
 
 
-unique_visitors(From, Until, Context) ->
-    Site = z_context:site(Context),
+unique_visitors(_From, _Until, Context) ->
+    _Site = z_context:site(Context),
     
     Query = <<"
-SELECT ds.day, COALESCE(uvi.ids, 0) AS ids 
-FROM date_series ds
-LEFT JOIN unique_visitor_ids uvi 
-ON ds.day = uvi.day
-ORDER BY ds.day;
+SELECT
+    ds.day,
+    COALESCE(uvi.ids, 0) AS ids 
+FROM
+     date_series ds
+LEFT JOIN
+    unique_visitor_ids uvi 
+ON
+    ds.day = uvi.day
+ORDER BY
+    ds.day;
 ">>,
 
     select(Query,
@@ -385,7 +432,9 @@ ORDER BY ds.day;
             cte(time_filtered, time_filter(site_filtered)),
             cte(successes, success_filtered(time_filtered)),
             cte(visitor_ids, visitor_ids(successes)),
-            <<"unique_visitor_ids AS (SELECT date_trunc('day', timestamp) AS day, count(DISTINCT visitor_id) AS ids FROM visitor_ids GROUP BY day)">>
+            <<"unique_visitor_ids AS (SELECT date_trunc('day', timestamp) AS day, count(DISTINCT visitor_id) AS ids FROM visitor_ids GROUP BY day)">>,
+            <<"daily_counts AS ( SELECT ds.day, COALESCE(uvi.ids, 0) AS ids FROM date_series ds LEFT JOIN unique_visitor_ids uvi ON ds.day = uvi.day)">>,
+            <<"total AS (SELECT count(DISTINCT visitor_id) AS total_visitors FROM visitor_ids)">>
            ],
            Context).
 
@@ -1147,7 +1196,7 @@ new_overview(Context) ->
   SELECT
     COUNT(*) AS total_sessions,
     SUM(CASE WHEN reqs = 1 THEN 1 ELSE 0 END) AS bounces,
-    AVG(duration_seconds) AS avg_session_seconds,
+    AG(duration_seconds) AS avg_session_seconds,
     PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration_seconds) AS median_session_seconds
   FROM sessions
 )">>,
@@ -1182,13 +1231,9 @@ select(Select, CTEs, Context) ->
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
 
-    %CTEs1 = [cte(date_series, date_series()), 
-    %         cte(site_filtered, site_filter(access_log)),
-    %         cte(filtered, time_filter(site_filtered)) | CTEs ],
-
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
 
-    ?DEBUG(Query),
+    ?DEBUG(iolist_to_binary(Query)),
 
     case z_duckdb:q(Query, #{ from => From, until => Until, site => Site }) of
         {ok, _, Data} ->
@@ -1221,7 +1266,11 @@ page_filter(Source) ->
 visitor_ids(Source) ->
     <<"SELECT
     md5(concat_ws('|', coalesce(peer_ip,''), coalesce(user_agent,''))) as visitor_id,
-    timestamp FROM ", (z_convert:to_binary(Source))/binary>>.
+    session_id as session_id,
+    rsc_id as rsc_id,
+    user_id as user_id,
+    timestamp as timestamp
+      FROM ", (z_convert:to_binary(Source))/binary>>.
 
 
 daily_stats(Source) -> 
@@ -1264,6 +1313,7 @@ star_filter(Source, WhereClause) ->
 
 date_series() ->
     <<"SELECT * FROM generate_series(date_trunc('day', $from), date_trunc('day', $until) - INTERVAL 1 DAY, INTERVAL 1 DAY) AS t(day)">>.
+
 
 filtered_as() ->
     <<"filtered AS (
