@@ -234,31 +234,38 @@ WHERE site = $site
     end.
 
 overview(Context) ->
-    Query = <<"
-        SELECT
-            date_trunc('day', timestamp) AS day,
-            count(DISTINCT visitor_id) AS visitors, 
-            count(DISTINCT session_id) AS sessions,
-            count(DISTINCT rsc_id) AS rscs, 
-            count(DISTINCT user_id) AS users 
-        FROM
-            visitor_ids 
-        GROUP BY
-            day
+    Query = <<"SELECT
+    d.day as day,
+    d.visits as visits,
+    v.users as users,
+    d.total_pageviews AS pageviews,
+    ROUND(d.total_pageviews::numeric / NULLIF(d.visits, 0), 2)::double AS views_per_visit,
+    ROUND(d.bounces::numeric / NULLIF(d.visits, 0), 4)::double AS bounce_rate,
+    d.avg_duration as avg_duration
+FROM
+    daily_stats d
+JOIN
+    daily_visitors v
+USING (day)
 
-        UNION ALL
+UNION ALL
 
-        SELECT
-             NULL as day,
-             count(DISTINCT visitor_id) AS visitor,
-             count(DISTINCT session_id) AS sessions,
-             count(DISTINCT rsc_id) AS rscs, 
-             count(DISTINCT user_id) AS users 
-        FROM
-            visitor_ids
-
-        ORDER BY
-            day NULLS last;
+SELECT
+    NULL AS day,
+    COUNT(DISTINCT visitor_id) as visits,
+    COUNT(DISTINCT user_id) as users,
+    COUNT(*) as pageviews,
+    ROUND( COUNT(*)::numeric / NULLIF(COUNT(DISTINCT visitor_id), 0), 2) as views_per_visit,
+    ROUND( COUNT(*) FILTER (WHERE pageviews = 1)::numeric / NULLIF(COUNT(DISTINCT visitor_id), 0), 4) AS bounce_rate,
+    AVG(date_sub('second', session_start, session_end)) as avg_duration
+FROM
+    visitor_stats
+JOIN 
+    visitor_ids
+USING
+    (visitor_id)
+ORDER BY
+    day NULLS LAST;
 ">>,
 
     select(Query,
@@ -266,8 +273,42 @@ overview(Context) ->
             cte(site_filtered, site_filter(access_log)),
             cte(time_filtered, time_filter(site_filtered)),
             cte(successes, success_filtered(time_filtered)),
+            cte(visitor_ids, visitor_ids(successes)),
 
-            cte(visitor_ids, visitor_ids(successes))
+            <<"visitor_stats AS (
+SELECT
+    date_trunc('day', timestamp) AS day,
+    visitor_id AS visitor_id,
+    MIN(timestamp) AS session_start,
+    MAX(timestamp) AS session_end,
+    COUNT(*) AS pageviews,
+FROM
+    visitor_ids
+GROUP BY
+    day, visitor_id)
+">>,
+
+            <<"daily_stats AS (
+SELECT
+    day,
+    COUNT(DISTINCT visitor_id) AS visits,
+    COUNT(*) FILTER (WHERE pageviews = 1) AS bounces,
+    SUM(pageviews)::integer AS total_pageviews,
+    AVG(date_sub('second', session_start, session_end)) AS avg_duration
+FROM
+    visitor_stats
+GROUP BY day)
+">>,
+            <<"daily_visitors AS (
+SELECT
+    date_trunc('day', timestamp) AS day,
+    COUNT(DISTINCT visitor_id) AS visitors,
+    COUNT(DISTINCT user_id) AS users
+FROM
+    visitor_ids
+GROUP BY
+    day)
+">>
            ],
            Context).
 
@@ -1234,6 +1275,7 @@ select(Select, CTEs, Context) ->
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
 
     ?DEBUG(iolist_to_binary(Query)),
+    io:fwrite(standard_error, "~s~n", [Query]),
 
     case z_duckdb:q(Query, #{ from => From, until => Until, site => Site }) of
         {ok, _, Data} ->
