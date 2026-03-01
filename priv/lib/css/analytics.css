@@ -51,7 +51,6 @@
 
 .chart-bar {
     fill: var(--color-primary);
-    transition: fill 0.3s ease;
 }
 
 .chart-bar:hover {
@@ -95,7 +94,6 @@
 
 /* Donut Chart Styles */
 .chart-donut-segment {
-    transition: opacity 0.3s ease;
     cursor: pointer;
 }
 
@@ -138,7 +136,6 @@
     border-radius: 4px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: box-shadow 0.3s ease;
 }
 
 .stat-card:hover {
@@ -227,7 +224,6 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--color-gray-dark);
-    transition: all 0.2s ease;
     text-decoration: none;
     display: inline-block;
 }
@@ -261,7 +257,6 @@
     font-size: 12px;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s ease;
     z-index: 1000;
 }
 
@@ -331,7 +326,6 @@
 
 .panel-collapse-icon {
     float: right;
-    transition: transform 0.3s ease;
 }
 
 .panel-collapse-icon.collapsed {
@@ -367,9 +361,6 @@
     }
 }
 
-.chart-container {
-    animation: fadeIn 0.5s ease;
-}
 
 /* Chart Label Truncation */
 .chart-label-truncate {

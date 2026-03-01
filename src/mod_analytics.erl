@@ -40,7 +40,7 @@ observe_http_log_access(#http_log_access{} = Log, _Context) ->
 observe_admin_menu(#admin_menu{}, Acc, Context) ->
     [
      #menu_item{id=admin_analytics,
-                parent=admin_system,
+                parent=admin_modules,
                 label=?__("Analytics", Context),
                 url={admin_analytics, []},
                 visiblecheck={acl, use, mod_ducklog}}

@@ -25,6 +25,8 @@
 ]).
 
 -export([
+    overview/1,
+
     stats_overview/1, stats_overview/3,
     rsc_stats_overview/2, rsc_stats_overview/4,
     unique_visitors/1, unique_visitors/3,
@@ -51,12 +53,18 @@
     error_breakdown/1, error_breakdown/3,
     traffic_sources/1, traffic_sources/3,
     session_duration_distribution/1, session_duration_distribution/3,
-    traffic_by_hour_of_day/1, traffic_by_hour_of_day/3
+    traffic_by_hour_of_day/1, traffic_by_hour_of_day/3,
+
+    select/3
+
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 %% TODO add access control to the api.
+
+m_get([<<"overview">> | Rest], _Msg, Context) ->
+    {ok, {overview(Context), Rest}};
 
 m_get([<<"stats_overview">> | Rest], _Msg, Context) ->
     {ok, {stats_overview(Context), Rest}};
@@ -111,7 +119,7 @@ m_get(V, _Msg, _Context) ->
 
 %% Helper function to get date range based on context
 get_date_range(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
+    {Until, _} = z_datetime:to_datetime(<<"now">>),
     Range = z_context:get(active_range, Context, <<"28d">>),
     Days = case Range of
         <<"7d">> -> 7;
@@ -119,8 +127,8 @@ get_date_range(Context) ->
         <<"91d">> -> 91;
         _ -> 28  % Default to 28 days
     end,
-    From = z_datetime:prev_day(Until, Days),
-    {From, Until}.
+    {From, _} = z_datetime:prev_day(Until, Days),
+    {{From, {0,0,0}}, {Until, {23, 59, 59}}}.
 
 page_views(Context) ->
     {From, Until} = get_date_range(Context),
@@ -180,6 +188,112 @@ WHERE
             []
     end.
 
+overview(Context) ->
+    SessionStatsCTE = <<"session_stats AS MATERIALIZED (
+    SELECT
+        window_session_id AS session_id,
+        MIN(timestamp) AS session_start,
+        MAX(timestamp) AS session_end,
+        COUNT(*) AS pageviews,
+        COUNT(DISTINCT rsc_id) AS rscs,
+        MAX(visitor_id) AS visitor_id,
+        MAX(user_id) FILTER (WHERE user_id IS NOT NULL) AS user_id
+    FROM
+        session_windows
+    GROUP BY
+        window_session_id
+)">>,
+
+    DailyStatsCTE = <<"daily_stats AS (
+    SELECT
+        date_trunc('day', session_start) AS day,
+        COUNT(*) AS visits,
+        COUNT(DISTINCT visitor_id) AS visitors,
+        COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL) AS logged_users,
+        SUM(pageviews)::INTEGER AS pageviews,
+        COUNT(*) FILTER (WHERE pageviews = 1) AS bounces,
+        AVG( epoch_ms(session_end - session_start) / 1000.0) FILTER (WHERE pageviews > 1) AS avg_duration_seconds
+    FROM session_stats
+    GROUP BY day
+)">>,
+
+SessionEventsCTE = <<"session_events AS (
+    SELECT
+        visitor_id,
+        session_id,
+        rsc_id,
+        user_id,
+        timestamp,
+        CASE WHEN timestamp - LAG(timestamp) OVER (
+                    PARTITION BY visitor_id
+                    ORDER BY timestamp
+                ) > INTERVAL '30 minutes'
+             THEN 1 ELSE 0
+        END AS is_new_window
+    FROM pageviews
+)">>,
+
+SessionWindowsCTE = <<"session_windows AS (
+    SELECT
+        visitor_id,
+        session_id,
+        rsc_id,
+        user_id,
+        timestamp,
+        hash(
+            visitor_id,
+            SUM(is_new_window) OVER (
+                PARTITION BY visitor_id
+                ORDER BY timestamp
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            )
+        ) AS window_session_id
+    FROM session_events
+)">>,
+
+    Query = <<"SELECT
+    d.day AS day,
+    COALESCE(s.visitors, 0) AS visitors,
+    COALESCE(s.visits, 0) AS visits,
+    COALESCE(s.logged_users, 0) AS logged_users,
+    COALESCE(s.pageviews, 0) AS pageviews,
+    COALESCE(ROUND(s.pageviews::NUMERIC / NULLIF(s.visits, 0), 2), 0) AS views_per_visit,
+    COALESCE(ROUND(s.bounces::NUMERIC / NULLIF(s.visits, 0), 4), 0) AS bounce_rate,
+    COALESCE(ROUND(s.avg_duration_seconds, 2), 0)   AS avg_duration_seconds
+FROM date_spine d
+LEFT JOIN daily_stats s ON s.day = d.day
+UNION ALL
+SELECT
+    NULL,
+    COUNT(DISTINCT visitor_id),
+    COUNT(*),
+    COUNT(DISTINCT user_id) FILTER (WHERE user_id IS NOT NULL),
+    SUM(pageviews)::INTEGER,
+    ROUND(SUM(pageviews)::NUMERIC / NULLIF(COUNT(*), 0), 2),
+    ROUND(COUNT(*) FILTER (WHERE pageviews = 1)::NUMERIC / NULLIF(COUNT(*), 0), 4),
+    ROUND(AVG(epoch_ms(session_end - session_start) / 1000.0) FILTER (WHERE pageviews > 1), 2)
+FROM session_stats
+ORDER BY day NULLS FIRST">>,
+
+    [Totals | Data]= select(Query,
+                  [
+                   date_spine(),
+
+                   cte(site_filtered, site_filter(access_log)),
+                   cte(time_filtered, time_filter(site_filtered)),
+                   cte(successes, success_filtered(time_filtered)),
+                   cte(filtered, exclude_controller_authentication(successes)),
+                   cte(filtered1, exclude_controller_file(filtered)),
+                   cte(filtered2, exclude_controller_fileuploader(filtered1)),
+
+                   cte(pageviews, pageviews(filtered2)),
+                   SessionEventsCTE,
+                   SessionWindowsCTE,
+                   SessionStatsCTE,
+                   DailyStatsCTE
+                  ],
+                  Context),
+    #{ totals => Totals, data => Data}.
 
 stats_overview(Context) ->
     {From, Until} = get_date_range(Context),
@@ -214,7 +328,8 @@ WITH
             site = $site
             AND timestamp >= $from
             AND timestamp <= $until
-        GROUP BY
+            AND", (no_bots_clause())/binary,
+"        GROUP BY
             day
     )
 SELECT
@@ -237,12 +352,12 @@ ORDER BY
 ">>,
 
     case z_duckdb:q(Q1, #{ from => From,
-                            until => Until,
-                            site => Site} ) of
+                           until => Until,
+                           site => Site} ) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
+            ?LOG_WARNING(#{ text => <<"Could not get request overview">>, reason => Reason }),
             []
     end.
 
@@ -312,61 +427,96 @@ ORDER BY
             []
     end.
 
-
 unique_visitors(Context) ->
     {From, Until} = get_date_range(Context),
     unique_visitors(From, Until, Context).
 
 
-unique_visitors(From, Until, Context) ->
-    Site = z_context:site(Context),
-
-    Q1 = <<"
-WITH
-    date_series AS (
-        SELECT unnest(
-            generate_series(
-                date_trunc('day', $from::timestamp),
-                date_trunc('day', $until::timestamp),
-                INTERVAL 1 day
-            )) AS day
-    ),
-    unique_sessions AS (
-        SELECT
-            date_trunc('day', timestamp) AS day,
-            count(DISTINCT session_id) AS unique
-        FROM
-            access_log
-        WHERE
-            site = $site
-            AND timestamp >= $from
-            AND timestamp <= $until
-            AND ", (no_bots_clause())/binary,
-"       GROUP BY
-            day
-    )
+unique_visitors(_From, _Until, Context) ->
+    _Site = z_context:site(Context),
+    
+    Query = <<"
 SELECT
     ds.day,
-    COALESCE(us.unique, 0) AS unique
+    COALESCE(uvi.ids, 0) AS ids 
 FROM
-    date_series ds
+     date_series ds
 LEFT JOIN
-    unique_sessions us
+    unique_visitor_ids uvi 
 ON
-    ds.day = us.day
+    ds.day = uvi.day
 ORDER BY
     ds.day;
 ">>,
 
-    case z_duckdb:q(Q1, #{ from => From,
-                            until => Until,
-                            site => Site} ) of
-        {ok, _, Data} ->
-            Data;
-        {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
-            []
-    end.
+    select(Query,
+           [
+            cte(date_series, date_series()), 
+            cte(site_filtered, site_filter(access_log)),
+            cte(time_filtered, time_filter(site_filtered)),
+            cte(successes, success_filtered(time_filtered)),
+            cte(visitor_ids, pageviews(successes)),
+            <<"unique_visitor_ids AS (SELECT date_trunc('day', timestamp) AS day, count(DISTINCT visitor_id) AS ids FROM visitor_ids GROUP BY day)">>,
+            <<"daily_counts AS ( SELECT ds.day, COALESCE(uvi.ids, 0) AS ids FROM date_series ds LEFT JOIN unique_visitor_ids uvi ON ds.day = uvi.day)">>,
+            <<"total AS (SELECT count(DISTINCT visitor_id) AS total_visitors FROM visitor_ids)">>
+           ],
+           Context).
+
+%    Q1 = <<"
+%WITH
+%    date_series AS (
+%        SELECT unnest(
+%            generate_series(
+%                date_trunc('day', $from::timestamp),
+%                date_trunc('day', $until::timestamp),
+%                INTERVAL 1 day
+%            )) AS day
+%    ),
+%    visitor_ids AS (
+%        SELECT
+%            md5(concat_ws('|', coalesce(peer_ip,''), coalesce(user_agent,''))) as visitor_id,
+%            timestamp
+%        FROM
+%            access_log
+%        WHERE
+%            site = $site
+%            AND timestamp >= $from
+%            AND timestamp <= $until
+%            AND resp_category = 2
+%            AND ", (no_bots_clause())/binary,
+%"
+%    ),
+%    unique_sessions AS (
+%        SELECT
+%            date_trunc('day', timestamp) AS day,
+%            count(DISTINCT visitor_id) AS unique
+%        FROM
+%            visitor_ids 
+%       GROUP BY
+%            day
+%    )
+%SELECT
+%    ds.day,
+%    COALESCE(us.unique, 0) AS unique
+%FROM
+%    date_series ds
+%LEFT JOIN
+%    unique_sessions us
+%ON
+%    ds.day = us.day
+%ORDER BY
+%    ds.day;
+%">>,
+%
+%    case z_duckdb:q(Q1, #{ from => From,
+%                            until => Until,
+%                            site => Site} ) of
+%        {ok, _, Data} ->
+%            Data;
+%        {error, Reason} ->
+%            ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
+%            []
+%    end.
 
 erroring_pages(Context) ->
     {From, Until} = get_date_range(Context),
@@ -1040,3 +1190,68 @@ traffic_by_hour_of_day(From, Until, Context) ->
             ?LOG_WARNING(#{ text => <<"Could not get traffic by hour of day">>, reason => Reason }),
             []
     end.
+
+
+select(Select, CTEs, Context) ->
+    Site = z_context:site(Context),
+    {From, Until} = get_date_range(Context),
+
+    Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
+
+    io:fwrite(standard_error, "~s~n", [Query]),
+
+    case z_duckdb:q(Query, #{ from => From, until => Until, site => Site }) of
+        {ok, _, Data} ->
+            Data;
+        {error, Reason} ->
+            ?LOG_WARNING(#{ text => <<"Error">>, reason => Reason }),
+            []
+    end.
+
+%%
+%% Helpers
+%%
+
+cte(Name, Query) ->
+    <<(z_convert:to_binary(Name))/binary, " AS (", Query/binary, ")">>.
+
+% filter all page like requests, excluding the admin.
+site_filter(Source) ->
+    star_filter(Source, <<"WHERE site = $site">>).
+
+time_filter(Source) ->
+    star_filter(Source, <<"WHERE timestamp >= $from AND timestamp <= $until">>).
+
+success_filtered(Source) ->
+    star_filter(Source, <<"WHERE resp_category = 2">>).
+
+exclude_controller_authentication(Source) ->
+    star_filter(Source, <<"WHERE controller != 'controller_authentication'">>).
+
+exclude_controller_file(Source) ->
+    star_filter(Source, <<"WHERE controller != 'controller_file'">>).
+
+exclude_controller_fileuploader(Source) ->
+    star_filter(Source, <<"WHERE controller != 'controller_fileuploader'">>).
+
+pageviews(Source) ->
+    <<"SELECT
+    hash(peer_ip, user_agent) as visitor_id,
+    session_id as session_id,
+    rsc_id as rsc_id,
+    user_id as user_id,
+    timestamp as timestamp
+      FROM ", (z_convert:to_binary(Source))/binary>>.
+
+date_spine() ->
+    <<"date_spine AS (
+    SELECT generate_series::DATE AS day
+    FROM generate_series($from::TIMESTAMP, $until::TIMESTAMP, INTERVAL '1 day')
+    )">>.
+
+star_filter(Source, WhereClause) ->
+    <<"SELECT * FROM ", (z_convert:to_binary(Source))/binary, " ", WhereClause/binary>>.
+
+date_series() ->
+    <<"SELECT * FROM generate_series(date_trunc('day', $from), date_trunc('day', $until) - INTERVAL 1 DAY, INTERVAL 1 DAY) AS t(day)">>.
+

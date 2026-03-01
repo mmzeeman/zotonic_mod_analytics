@@ -33,17 +33,25 @@ service_available(Context) ->
     {true, Context2}.
 
 is_authorized(Context) ->
-    z_controller_helper:is_authorized([ {use, z_context:get(acl_module, Context, mod_ducklog)} ], Context).
+    z_controller_helper:is_authorized([ {use, z_context:get(acl_module, Context, mod_analytics)} ], Context).
 
 process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     % Get the date range parameter (default to 28d)
     Range = z_context:get_q(<<"range">>, Context, <<"28d">>),
+
+    % View 
+    View = z_context:get_q(<<"view">>, Context, <<"unique">>),
+
     % Set active_range in context so model can access it
     Context1 = z_context:set(active_range, Range, Context),
+    Context2 = z_context:set(active_view, View, Context),
+
     Vars = [
         {page_admin_statistics, true},
-        {active_range, Range}
+        {active_range, Range},
+        {active_view, View}
     ],
+
     Html = z_template:render("admin_analytics.tpl", Vars, Context1),
     z_context:output(Html, Context1).
 

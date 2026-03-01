@@ -2,7 +2,8 @@
 {% with max | default:(values | max) as max %}
 <svg style="vertical-align: middle; {% if show_last %}padding-right: 2.4px; {% endif %}{% if show_first %}padding-left: 2.4px; {% endif %}overflow: visible"
      xmlns="http://www.w3.org/2000/svg"
-     height="1em" width="{{ 3 * length }}px"
+     height="1em"
+     width={% if w100 %}"100%"{% else %}"{{ 3 * length }}px"{% endif %}
      viewBox="0 0 {{ length - 1 }} {{ max }}" preserveAspectRatio="none">
     <path d="M{% for v in values %} {{ forloop.counter0 }} {{ max - v }}{% endfor %}"
           stroke-width="1.2"

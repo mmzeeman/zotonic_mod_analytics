@@ -10,7 +10,7 @@
     <div class="stat-card-header">
         <div style="flex: 1;">
             <div class="stat-card-label">{{ label }}</div>
-            <div class="stat-card-value">{{ value | default:0 }}</div>
+            <div class="stat-card-value">{{ value | default:0 | format_si }}</div>
             {% if change_percent %}
                 {% if change_percent > 0 %}
                     <span class="stat-card-change positive">
