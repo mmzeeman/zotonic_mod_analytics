@@ -44,14 +44,12 @@ process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
 
     % Set active_range in context so model can access it
     Context1 = z_context:set(active_range, Range, Context),
-    Context2 = z_context:set(active_view, View, Context),
-
+    Context2 = z_context:set(active_view, View, Context1),
     Vars = [
         {page_admin_statistics, true},
         {active_range, Range},
         {active_view, View}
     ],
-
-    Html = z_template:render("admin_analytics.tpl", Vars, Context1),
-    z_context:output(Html, Context1).
+    Html = z_template:render("admin_analytics.tpl", Vars, Context2),
+    z_context:output(Html, Context2).
 

@@ -21,6 +21,8 @@
 %% Return a compact SI-formatted string for numbers.
 format_si(undefined, _Context) ->
     undefined;
+format_si(<<>>, _Context) ->
+    undefined;
 format_si(Value, _Context) when is_number(Value) ->
     format_number(Value).
 
