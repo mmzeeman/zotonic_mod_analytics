@@ -15,9 +15,9 @@
     <span class="caret"></span>
   </button>
   <ul class="dropdown-menu" aria-labelledby="{{ #range }}">
-      <li {% if current_range == "7d" %}class="active"{% endif %}><a href="{% url admin_analytics range="7d" %}">{_ Last 7 days _}</a></li>
-      <li {% if current_range == "28d" %}class="active"{% endif %}><a href="{% url admin_analytics range="28d" %}">{_ Last 28 days _}</a></li>
-      <li {% if current_range == "91d" %}class="active"{% endif %}><a href="{% url admin_analytics range="91d" %}">{_ Last 91 days _}</a></li>
+      <li {% if current_range == "7d" %}class="active"{% endif %}><a href="{% url admin_analytics range="7d" view=active_view %}">{_ Last 7 days _}</a></li>
+      <li {% if current_range == "28d" %}class="active"{% endif %}><a href="{% url admin_analytics range="28d" view=active_view %}">{_ Last 28 days _}</a></li>
+      <li {% if current_range == "91d" %}class="active"{% endif %}><a href="{% url admin_analytics range="91d" view=active_view %}">{_ Last 91 days _}</a></li>
   </ul>
 </div>
 {% endwith %}

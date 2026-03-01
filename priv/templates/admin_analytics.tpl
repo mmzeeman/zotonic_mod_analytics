@@ -12,69 +12,60 @@
 </div>
 
 {# Time Range Selector #}
+
 <div class="container-fluid">
-    {% include "_time_range_selector.tpl" active_range=active_range %}
+    {% include "_time_range_selector.tpl" active_range=active_range active_view=active_view %}
 </div>
 
+{% with %{ "unique": %{ title: _"Unique Visitors", index: 2, format: "si" },
+           "users":  %{ title: _"Users", index: 4, format: "si" },
+           "views":  %{ title: _"Total Views", index: 5, format: "si" }
+           "visit":  %{ title: _"Views per Visit", index: 6, format: "si" }
+           "rate":  %{ title: _"Bounce Rate", index: 7, format: "percent" }
+           "duration": %{ title: _"Visit Duration", index: 8, format: "duration" } },
+        ["unique", "users", "views", "visit", "rate", "duration"]
+   as
+       view_map,
+       views
+%}
+
 <div class="container-fluid">
-
-    {% with m.analytics.stats_overview as stats_overview %}
+    {% with m.analytics.overview as overview %}
     <div class="row">
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% with m.analytics.unique_visitors as visitors %}
-            {{ visitors | pprint }}
-            {% include "_card_simple_stat.tpl" title="Unique Visitors" value=visitors|element:1 trend_data=(stats_overview | values:2) %}
-            {% endwith %}
-        </div>
-
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Resources Visited" value="122.5k" trend_data=(stats_overview | values:3) %}
-        </div>
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Data Out" value="12.5k" trend_data=(stats_overview | values:6) %}
-        </div>
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Unique Visitors" value="12.5k" trend_data=(stats_overview | values:5) %}
-        </div>
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Users" value="12.5k" trend_data=(stats_overview | values:4)%}
-        </div>
-        <div class="col-md-2 col-sm-4 col-xs-6">
-            {% include "_card_simple_stat.tpl" title="Server Errors" value="12.5k" trend_data=(stats_overview | values:8)%}
-        </div>
+        {% for view in views %}
+            <div class="col-md-2 col-sm-4 col-xs-6">
+                <a href="{% url admin_analytics view=view range=active_range %}">
+                    {% include "_card_simple_stat.tpl"
+                           title=view_map[view].title
+                           is_selected=(active_view == view)
+                           format=view_map[view].format
+                           value=overview.totals | element:view_map[view].index
+                           trend_data=(overview.data | values:view_map[view].index ) %}
+                </a>
+            </div>
+        {% endfor %}
     </div>
-    {% endwith %}
 
     {# Unique Visitors Section - SVG Bar Chart #}
-    {% with m.analytics.unique_visitors as visitors %}
+    {% with  (overview.data | values:1) | zip:(overview.data | values:view_map[active_view].index) as data %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">
-                        {% if active_range == "7d" %}
-                            {_ Unique Visitors (7 days) _}
-                        {% elif active_range == "91d" %}
-                            {_ Unique Visitors (91 days) _}
-                        {% else %}
-                            {_ Unique Visitors (28 days) _}
-                        {% endif %}
-                    </h3>
-                </div>
                 <div class="panel-body">
                     {% include "_chart_area.tpl"
-                        data=visitors
+                        data=data
                         title=""
                         width=1000
                         height=300
                         gradient_colors=["#5bc0de", "#3a9cb8"]
-                        y_axis_label=_"Visitors"
+                        y_axis_label=view_map[active_view].title
                         x_axis_label=_"Date"
                     %}
                 </div>
             </div>
         </div>
     </div>
+    {% endwith %}
     {% endwith %}
 
     {# Main Visualizations Grid #}
@@ -134,44 +125,9 @@
             </div>
         </div>
 
-        {# Error Breakdown Section #}
-        <div class="analytics-grid-full">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{_ Error Breakdown _}</h3>
-                </div>
-                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
-                    {% with m.analytics.error_breakdown as error_data %}
-                    {% if error_data %}
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover table-condensed">
-                                <thead>
-                                    <tr>
-                                        <th>{_ Error Type _}</th>
-                                        <th>{_ Count _}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for error_type, count in error_data %}
-                                    <tr>
-                                        <td>{{ error_type }}</td>
-                                        <td>{{ count }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-muted">{_ No errors found _}</p>
-                    {% endif %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-
-    </div>
-
     {# User Activity Section #}
+
+    {#
     {% with m.analytics.user_activity  as user_activity %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
@@ -221,8 +177,10 @@
         </div>
     </div>
     {% endwith %}
+    #}
 
     {# Dispatch Rule Health Section #}
+    {#
     {% with m.analytics.dispatch_rule_health as health %}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
@@ -264,6 +222,7 @@
         </div>
     </div>
     {% endwith %}
+    #}
 
     {# Popular Pages Section #}
     {% with m.analytics.popular_pages as popular %}
@@ -344,5 +303,6 @@
     {% endwith %}
 
 </div>
+{% endwith %}
 
 {% endblock %}
