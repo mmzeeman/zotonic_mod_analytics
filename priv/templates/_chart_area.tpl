@@ -23,7 +23,7 @@
     {% with chart_width - 80 as chart_area_width %}
     {% with chart_height - 60 as chart_area_height %}
     {% with 20 as top_padding %}
-    {% with nice_max - min_val as value_range %}
+    {% with nice_max as value_range %}
 
     <div class="chart-container">
         {% if title %}<h4 class="chart-title">{{ title }}</h4>{% endif %}
@@ -76,7 +76,7 @@
                   d="M 50,{{ top_padding + chart_area_height }}
                      {% for label, val in data %}
                         {% with forloop.counter0 * x_spacing + 50 as x_pos %}
-                        {% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}
+                        {% with (val / value_range) * chart_area_height as y_scaled %}
                         {% with chart_area_height - y_scaled as y_pos %}
                         L {{ x_pos }},{{ top_padding + y_pos }}
                         {% endwith %}
@@ -91,7 +91,7 @@
             
             {# Line on top of area #}
             <path class="chart-line"
-                  d="M {% for label, val in data %}{% with forloop.counter0 * x_spacing + 50 as x_pos %}{% with ((val - min_val) / value_range) * chart_area_height as y_scaled %}{% with chart_area_height - y_scaled as y_pos %}{{ x_pos }},{{ top_padding + y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
+                  d="M {% for label, val in data %}{% with forloop.counter0 * x_spacing + 50 as x_pos %}{% with (val / value_range) * chart_area_height as y_scaled %}{% with chart_area_height - y_scaled as y_pos %}{{ x_pos }},{{ top_padding + y_pos }}{% if not forloop.last %} L {% endif %}{% endwith %}{% endwith %}{% endwith %}{% endfor %}"
                   stroke="{{ start_color }}"
                   stroke-width="2"
                   fill="none" />
