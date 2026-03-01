@@ -42,14 +42,22 @@ process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     % View 
     View = z_context:get_q(<<"view">>, Context, <<"unique">>),
 
-    % Set active_range in context so model can access it
+    %%
+    IncludeAdmin = z_convert:to_bool(z_context:get_q(<<"include_admin">>, Context, false)),
+    IncludeBots = z_convert:to_bool(z_context:get_q(<<"include_bots">>, Context, false)),
+
     Context1 = z_context:set(active_range, Range, Context),
     Context2 = z_context:set(active_view, View, Context1),
+    Context3 = z_context:set(is_include_bots, IncludeAdmin, Context2),
+    Context4 = z_context:set(is_include_admin, IncludeBots, Context3),
+
     Vars = [
         {page_admin_statistics, true},
         {active_range, Range},
-        {active_view, View}
+        {active_view, View},
+        {is_include_bots, IncludeBots},
+        {is_include_admin, IncludeAdmin}
     ],
     Html = z_template:render("admin_analytics.tpl", Vars, Context2),
-    z_context:output(Html, Context2).
+    z_context:output(Html, Context4).
 

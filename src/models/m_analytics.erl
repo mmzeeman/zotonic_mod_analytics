@@ -282,11 +282,14 @@ ORDER BY day NULLS FIRST">>,
                    cte(site_filtered, site_filter(access_log)),
                    cte(time_filtered, time_filter(site_filtered)),
                    cte(successes, success_filtered(time_filtered)),
+
                    cte(filtered, exclude_controller_authentication(successes)),
                    cte(filtered1, exclude_controller_file(filtered)),
                    cte(filtered2, exclude_controller_fileuploader(filtered1)),
+                   cte(filtered3, exclude_admin(filtered2)),
+                   cte(filtered4, exclude_bots(filtered3)),
 
-                   cte(pageviews, pageviews(filtered2)),
+                   cte(pageviews, pageviews(filtered4)),
                    SessionEventsCTE,
                    SessionWindowsCTE,
                    SessionStatsCTE,
@@ -1233,6 +1236,14 @@ exclude_controller_file(Source) ->
 
 exclude_controller_fileuploader(Source) ->
     star_filter(Source, <<"WHERE controller != 'controller_fileuploader'">>).
+
+exclude_admin(Source) ->
+    star_filter(Source, <<"WHERE NOT path ^@ '/admin'">>).
+
+exclude_bots(Source) ->
+    star_filter(Source, <<"WHERE NOT regexp_matches(user_agent,
+    'bot|crawl|spider|slurp|bingpreview|facebook|twitter|linkedinbot|whatsapp|telegram|curl|wget|python|java|go-http|okhttp|axios|postman|libwww|zgrab|nuclei|nmap|masscan|scanbot|dataforseo|semrush|ahrefs|mj12', 'i')">>).
+
 
 pageviews(Source) ->
     <<"SELECT

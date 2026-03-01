@@ -6,6 +6,7 @@
 
 {% lib "css/analytics.css" %}
 
+{#
 <div class="admin-header">
     <h2>{_ Analytics _}</h2>
     <p>{_ This page shows site analytics. _}</p>
@@ -13,7 +14,19 @@
 
 {# Time Range Selector #}
 
-<div class="container-fluid">
+<div class="well">
+    {% if is_include_admin %}
+        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots %}" class="btn btn-default">Include admin 🟢</a>
+    {% else %}
+        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots include_admin=true %}" class="btn btn-default">Include admin ⚪</a>
+    {% endif %}
+
+    {% if is_include_bots %}
+        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin %}" class="btn btn-default">Include bots 🟢</a>
+    {% else %}
+        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=true %}" class="btn btn-default">Include bots ⚪</a>
+    {% endif %}
+
     {% include "_time_range_selector.tpl" active_range=active_range active_view=active_view %}
 </div>
 
@@ -34,7 +47,7 @@
     <div class="row">
         {% for view in views %}
             <div class="col-md-2 col-sm-4 col-xs-6">
-                <a href="{% url admin_analytics view=view range=active_range %}">
+                <a href="{% url admin_analytics view=view range=active_range include_admin=q.include_admin include_bots=q.include_bots %}">
                     {% include "_card_simple_stat.tpl"
                            title=view_map[view].title
                            is_selected=(active_view == view)
