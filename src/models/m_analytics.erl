@@ -33,9 +33,9 @@
 
     popular_pages/1,
     popular_resources/1,
+    hourly_traffic/1,
 
     popular_rsc_pages/2,
-
     erroring_pages/1, erroring_pages/3,
 
     peer_ip_analytics/3,
@@ -46,8 +46,6 @@
     dispatch_rule_health/1, dispatch_rule_health/3,
     user_activity/1, user_activity/3,
 
-    %% New functions for enhanced dashboard
-    hourly_traffic/1, hourly_traffic/3,
     response_time_distribution/1, response_time_distribution/3,
     error_breakdown/1, error_breakdown/3,
     traffic_sources/1, traffic_sources/3,
@@ -927,31 +925,22 @@ no_bots_clause() ->
 
 %% @doc Get hourly traffic for the last 24 hours
 hourly_traffic(Context) ->
-    Until = z_datetime:to_datetime(<<"now">>),
-    From = z_datetime:prev_hour(Until, 24),
-    hourly_traffic(From, Until, Context).
-
-hourly_traffic(From, Until, Context) ->
-    Site = z_context:site(Context),
-    Q = <<"
+    HoursSpine = <<"
     WITH all_hours AS (
         SELECT unnest(generate_series(0, 23)) as hour_of_day
-    ),
-    hourly_data AS (
+    )">>,
+
+    HourlyData = <<"hourly_data AS (
         SELECT 
             hour(timestamp) as hour_of_day,
             count(*) as requests
         FROM 
-            access_log
-        WHERE 
-            site = $site
-            AND timestamp >= $from
-            AND timestamp <= $until
-            AND ", (no_bots_clause())/binary, "
+            base
         GROUP BY 
             hour_of_day
-    )
-    SELECT 
+    )">>,
+
+    Q = <<"SELECT 
         all_hours.hour_of_day,
         COALESCE(hourly_data.requests, 0) as requests
     FROM 
@@ -961,15 +950,10 @@ hourly_traffic(From, Until, Context) ->
     ORDER BY 
         all_hours.hour_of_day
     ">>,
-    
-    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
-        {ok, _, Data} ->
-            Data;
-        {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get hourly traffic">>, reason => Reason }),
-            []
-    end.
 
+    Base = get_base_filters(Context),
+    select(Q, Base ++ [ HoursSpine, HourlyData ], Context).
+    
 %% @doc Get response time distribution in buckets
 response_time_distribution(Context) ->
     {From, Until} = get_date_range(Context),

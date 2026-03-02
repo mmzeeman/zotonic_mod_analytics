@@ -122,7 +122,7 @@
                             width=1000
                             show_grid=1
                             show_values=1
-                            y_axis_label=_"Unique Visitors"
+                            y_axis_label=_"Sessions"
                             x_axis_label=_"Hour of Day" %}
                         {% endwith %}
                         {% endwith %}
