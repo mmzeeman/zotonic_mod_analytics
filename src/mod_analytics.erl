@@ -43,5 +43,5 @@ observe_admin_menu(#admin_menu{}, Acc, Context) ->
                 parent=admin_modules,
                 label=?__("Analytics", Context),
                 url={admin_analytics, []},
-                visiblecheck={acl, use, mod_ducklog}}
+                visiblecheck={acl, use, ?MODULE}}
      |Acc].

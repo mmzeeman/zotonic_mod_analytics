@@ -286,6 +286,7 @@ ORDER BY day NULLS FIRST">>,
                    cte(filtered, exclude_controller_authentication(successes)),
                    cte(filtered1, exclude_controller_file(filtered)),
                    cte(filtered2, exclude_controller_fileuploader(filtered1)),
+
                    cte(filtered3, exclude_admin(filtered2)),
                    cte(filtered4, exclude_bots(filtered3)),
 
@@ -1198,12 +1199,18 @@ traffic_by_hour_of_day(From, Until, Context) ->
 select(Select, CTEs, Context) ->
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
+    IsIncludeBots = z_context:get(is_include_bots, Context),
+    IsIncludeAdmin = z_context:get(is_include_admin, Context),
 
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
 
     io:fwrite(standard_error, "~s~n", [Query]),
 
-    case z_duckdb:q(Query, #{ from => From, until => Until, site => Site }) of
+    case z_duckdb:q(Query, #{ from => From,
+                              until => Until,
+                              site => Site,
+                              include_admin => IsIncludeAdmin,
+                              include_bots => IsIncludeBots }) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->
