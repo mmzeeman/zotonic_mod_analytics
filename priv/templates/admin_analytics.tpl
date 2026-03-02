@@ -296,11 +296,7 @@
                             <tbody>
                                 {% for id, views, sessions, users in popular %}
                                 <tr>
-                                    <td>
-                                        <a href="{% url admin_edit_rsc id=id %}">
-                                            {{ id.title | default:id }}
-                                        </a>
-                                    </td>
+                                    <td> <a href="{% url admin_edit_rsc id=id %}"> {{ id.title | default:id }} </a> </td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
                                     <td>{{ users }}</td>

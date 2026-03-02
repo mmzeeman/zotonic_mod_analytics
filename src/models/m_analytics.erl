@@ -31,11 +31,10 @@
     rsc_stats_overview/2, rsc_stats_overview/4,
     unique_visitors/1, unique_visitors/3,
 
-    popular_pages/3,
+    popular_pages/1,
+    popular_resources/1,
 
     popular_rsc_pages/2,
-
-    popular_resources/1, popular_resources/3,
 
     erroring_pages/1, erroring_pages/3,
 
@@ -275,6 +274,21 @@ SELECT
 FROM session_stats
 ORDER BY day NULLS FIRST">>,
 
+    Base = get_base_filters(Context),
+
+    [Totals | Data] = select(Query, Base ++ [
+                                             cte(pageviews, pageviews(base)),
+                                             date_spine(),
+                                             SessionEventsCTE,
+                                             SessionWindowsCTE,
+                                             SessionStatsCTE,
+                                             DailyStatsCTE
+                                            ],
+                            Context),
+    #{ totals => Totals, data => Data}.
+
+
+get_base_filters(Context) ->
     BaseFilters = [site_filter,
                    time_filter,
                    success_filtered,
@@ -292,18 +306,9 @@ ORDER BY day NULLS FIRST">>,
                        false -> BaseFilters1 ++ [exclude_bots]
                    end,
 
-    Base = build_filter(base, BaseFilters2, access_log, available_filters(), []),
+    build_filter(base, BaseFilters2, access_log, available_filters(), []).
 
-    [Totals | Data] = select(Query, Base ++ [
-                                             cte(pageviews, pageviews(base)),
-                                             date_spine(),
-                                             SessionEventsCTE,
-                                             SessionWindowsCTE,
-                                             SessionStatsCTE,
-                                             DailyStatsCTE
-                                            ],
-                            Context),
-    #{ totals => Totals, data => Data}.
+
 
 build_filter(_Target, [], _Source, _Registry, Acc) ->
     lists:reverse(Acc);
@@ -572,12 +577,6 @@ LIMIT 10">>,
     end.
 
 popular_pages(Context) ->
-    {From, Until} = get_date_range(Context),
-    popular_pages(From, Until, Context).
-
-popular_pages(From, Until, Context) ->
-    Site = z_context:site(Context),
-
     Q = <<"
 SELECT
     path,
@@ -585,14 +584,7 @@ SELECT
     count(distinct session_id),
     count(distinct user_id)
 FROM
-    access_log
-WHERE
-    path NOT in ('/zotonic-auth', '/mqtt-transport', '/manifest.json', '/cotonic-service-worker.js', '/robots.txt', '/favicon.ico' )
-    AND NOT (path ^@ '/lib/' OR path ^@ '/lib-min' OR path ^@ '/image/' OR path ^@ '/fileuploader/' OR path ^@ '/admin' OR path ^@ '/ics/')
-    AND resp_code = 200
-    AND site = $site
-    AND timestamp >= $from
-    AND timestamp <= $until
+    base
 GROUP BY
     path
 ORDER BY
@@ -600,13 +592,8 @@ ORDER BY
     path
 LIMIT 10">>,
 
-    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site} ) of
-        {ok, _, Data} ->
-            Data;
-        {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get popular pages">>, reason => Reason }),
-            []
-    end.
+    Base = get_base_filters(Context),
+    select(Q, Base, Context).
 
 popular_rsc_pages(Rsc, Context) ->
     To = z_datetime:to_datetime(<<"now">>),
@@ -764,12 +751,6 @@ LIMIT 100">>,
 
 
 popular_resources(Context) ->
-    {From, Until} = get_date_range(Context),
-    popular_resources(From, Until, Context).
-
-popular_resources(From, Until, Context) ->
-    Site = z_context:site(Context),
-
     Q = <<"SELECT
     rsc_id,
     count(*),
@@ -779,10 +760,6 @@ FROM
     access_log
 WHERE
     rsc_id IS NOT NULL
-    AND resp_code = 200
-    AND site = $site
-    AND timestamp >= $from
-    AND timestamp <= $until
 GROUP BY
     rsc_id
 ORDER BY
@@ -790,14 +767,8 @@ ORDER BY
     rsc_id
 LIMIT 10">>,
 
-    case z_duckdb:q(Q, #{ site => Site, from => From, until => Until } ) of
-        {ok, _, Data} ->
-            Data;
-        {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get popular resources">>, reason => Reason }),
-            []
-    end.
-
+    Base = get_base_filters(Context),
+    select(Q, Base, Context).
 
 peer_ip_analytics(From, Until, Context) ->
     Site = z_context:site(Context),
