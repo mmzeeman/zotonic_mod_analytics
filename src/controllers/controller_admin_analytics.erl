@@ -43,21 +43,21 @@ process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     View = z_context:get_q(<<"view">>, Context, <<"unique">>),
 
     %%
-    IncludeAdmin = z_convert:to_bool(z_context:get_q(<<"include_admin">>, Context, false)),
-    IncludeBots = z_convert:to_bool(z_context:get_q(<<"include_bots">>, Context, false)),
+    IsIncludeAdmin = z_convert:to_bool(z_context:get_q(<<"include_admin">>, Context, false)),
+    IsIncludeBots = z_convert:to_bool(z_context:get_q(<<"include_bots">>, Context, false)),
 
     Context1 = z_context:set(active_range, Range, Context),
     Context2 = z_context:set(active_view, View, Context1),
-    Context3 = z_context:set(is_include_bots, IncludeAdmin, Context2),
-    Context4 = z_context:set(is_include_admin, IncludeBots, Context3),
+    Context3 = z_context:set(is_include_bots, IsIncludeBots, Context2),
+    Context4 = z_context:set(is_include_admin, IsIncludeAdmin, Context3),
 
     Vars = [
         {page_admin_statistics, true},
         {active_range, Range},
         {active_view, View},
-        {is_include_bots, IncludeBots},
-        {is_include_admin, IncludeAdmin}
+        {is_include_bots, IsIncludeBots},
+        {is_include_admin, IsIncludeAdmin}
     ],
-    Html = z_template:render("admin_analytics.tpl", Vars, Context2),
+    Html = z_template:render("admin_analytics.tpl", Vars, Context4),
     z_context:output(Html, Context4).
 

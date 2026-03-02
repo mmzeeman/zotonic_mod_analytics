@@ -275,29 +275,44 @@ SELECT
 FROM session_stats
 ORDER BY day NULLS FIRST">>,
 
-    [Totals | Data]= select(Query,
-                  [
-                   date_spine(),
+    BaseFilters = [site_filter,
+                   time_filter,
+                   success_filtered,
+                   exclude_controller_authentication,
+                   exclude_controller_file,
+                   exclude_controller_fileuploader],
 
-                   cte(site_filtered, site_filter(access_log)),
-                   cte(time_filtered, time_filter(site_filtered)),
-                   cte(successes, success_filtered(time_filtered)),
+    BaseFilters1 = case z_context:get(is_include_admin, Context) of
+                       true -> BaseFilters;
+                       false -> BaseFilters ++ [exclude_admin]
+                   end,
 
-                   cte(filtered, exclude_controller_authentication(successes)),
-                   cte(filtered1, exclude_controller_file(filtered)),
-                   cte(filtered2, exclude_controller_fileuploader(filtered1)),
+    BaseFilters2 = case z_context:get(is_include_bots, Context) of
+                       true -> BaseFilters1;
+                       false -> BaseFilters1 ++ [exclude_bots]
+                   end,
 
-                   cte(filtered3, exclude_admin(filtered2)),
-                   cte(filtered4, exclude_bots(filtered3)),
+    Base = build_filter(base, BaseFilters2, access_log, available_filters(), []),
 
-                   cte(pageviews, pageviews(filtered4)),
-                   SessionEventsCTE,
-                   SessionWindowsCTE,
-                   SessionStatsCTE,
-                   DailyStatsCTE
-                  ],
-                  Context),
+    [Totals | Data] = select(Query, Base ++ [
+                                             cte(pageviews, pageviews(base)),
+                                             date_spine(),
+                                             SessionEventsCTE,
+                                             SessionWindowsCTE,
+                                             SessionStatsCTE,
+                                             DailyStatsCTE
+                                            ],
+                            Context),
     #{ totals => Totals, data => Data}.
+
+build_filter(_Target, [], _Source, _Registry, Acc) ->
+    lists:reverse(Acc);
+build_filter(Target, [F], Source, Registry, Acc) ->
+    #{ F := Fun } = Registry,
+    build_filter(done, [], Target, Registry, [cte(Target, Fun(Source)) | Acc]);
+build_filter(Target, [F | Rest], Source, Registry, Acc) ->
+    #{ F := Fun } = Registry,
+    build_filter(Target, Rest, F, Registry, [cte(F, Fun(Source)) | Acc]).
 
 stats_overview(Context) ->
     {From, Until} = get_date_range(Context),
@@ -1204,7 +1219,7 @@ select(Select, CTEs, Context) ->
 
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
 
-    io:fwrite(standard_error, "~s~n", [Query]),
+    %% io:fwrite(standard_error, "~s~n", [Query]),
 
     case z_duckdb:q(Query, #{ from => From,
                               until => Until,
@@ -1245,12 +1260,11 @@ exclude_controller_fileuploader(Source) ->
     star_filter(Source, <<"WHERE controller != 'controller_fileuploader'">>).
 
 exclude_admin(Source) ->
-    star_filter(Source, <<"WHERE NOT path ^@ '/admin'">>).
+    star_filter(Source, <<"WHERE NOT starts_with(path, '/admin')">>).
 
 exclude_bots(Source) ->
-    star_filter(Source, <<"WHERE NOT regexp_matches(user_agent,
-    'bot|crawl|spider|slurp|bingpreview|facebook|twitter|linkedinbot|whatsapp|telegram|curl|wget|python|java|go-http|okhttp|axios|postman|libwww|zgrab|nuclei|nmap|masscan|scanbot|dataforseo|semrush|ahrefs|mj12', 'i')">>).
-
+    star_filter(Source, <<"WHERE regexp_matches(user_agent,
+    'bot|crawl|spider|slurp|bingpreview|facebook|twitter|linkedinbot|whatsapp|telegram|curl|wget|python|java|go-http|okhttp|axios|postman|libwww|zgrab|nuclei|nmap|masscan|scanbot|dataforseo|semrush|ahrefs|mj12', 'i') = false">>).
 
 pageviews(Source) ->
     <<"SELECT
@@ -1273,3 +1287,14 @@ star_filter(Source, WhereClause) ->
 date_series() ->
     <<"SELECT * FROM generate_series(date_trunc('day', $from), date_trunc('day', $until) - INTERVAL 1 DAY, INTERVAL 1 DAY) AS t(day)">>.
 
+available_filters() ->
+    #{
+      site_filter => fun site_filter/1,
+      time_filter => fun time_filter/1,
+      success_filtered => fun success_filtered/1,
+      exclude_controller_authentication =>  fun exclude_controller_authentication/1,
+      exclude_controller_file => fun exclude_controller_file/1,
+      exclude_controller_fileuploader => fun exclude_controller_fileuploader/1,
+      exclude_admin => fun exclude_admin/1,
+      exclude_bots => fun exclude_bots/1
+     }.
