@@ -714,10 +714,64 @@ suspicious_ips(Context) ->
     ORDER BY severity_score DESC
     LIMIT 50;">>,
 
+    Q1 = <<"    SELECT
+        peer_ip,
+        COUNT(*)                                             AS requests,
+        COUNT(DISTINCT hash(peer_ip, user_agent))            AS visitor_ids,
+        ARRAY_AGG(DISTINCT user_agent)                       AS user_agents,
+        -- Requests per visitor_id — low = scanner, high = NAT
+        ROUND(COUNT(*)::FLOAT
+            / NULLIF(COUNT(DISTINCT
+                hash(peer_ip, user_agent)), 0), 1)           AS req_per_visitor,
+        approx_count_distinct(path)                          AS unique_paths,
+        COUNT(DISTINCT session_id)                           AS sessions,
+        COUNT(*) FILTER (WHERE resp_code = 404)              AS not_founds,
+        COUNT(*) FILTER (WHERE resp_code IN (401, 403))      AS auth_errors,
+        COUNT(*) FILTER (WHERE resp_code >= 500)             AS server_errors,
+        entropy(path)                                        AS path_entropy,
+        MIN(timestamp)                                       AS first_seen,
+        MAX(timestamp)                                       AS last_seen,
+        COUNT(DISTINCT date_trunc('hour', timestamp))        AS active_hours,
+        COUNT(*) FILTER (
+            WHERE timestamp >= $until - INTERVAL '1 hour'
+        )                                                    AS req_last_hour,
+        -- Revised severity: penalise low visitor_id count relative to requests
+        (COUNT(*) / 100)
+        + CASE WHEN entropy(path) > 3.0 THEN 25 ELSE 0 END
+        + CASE WHEN entropy(path) > 4.0 THEN 15 ELSE 0 END
+        + (COUNT(*) FILTER (WHERE resp_code = 404) / 10)
+        + (COUNT(*) FILTER (WHERE resp_code IN (401, 403)) * 3)
+        -- Single visitor_id with high volume = almost certainly automated
+        + CASE WHEN COUNT(DISTINCT hash(peer_ip, user_agent)) = 1
+                AND COUNT(*) > 500
+               THEN 20 ELSE 0 END                            AS severity_score,
+        list_filter([
+            CASE WHEN COUNT(*) > 500
+                 THEN 'high volume' END,
+            CASE WHEN COUNT(DISTINCT hash(peer_ip, user_agent)) = 1
+                  AND COUNT(*) > 500
+                 THEN 'single agent' END,
+            CASE WHEN entropy(path) > 3.0
+                 THEN 'path scan (entropy='
+                      || ROUND(entropy(path), 1)::VARCHAR
+                      || ')' END,
+            CASE WHEN COUNT(*) FILTER (WHERE resp_code = 404) > 50
+                 THEN '404 scan' END,
+            CASE WHEN COUNT(*) FILTER (
+                      WHERE resp_code IN (401, 403)) > 5
+                 THEN 'auth probe' END
+        ], x -> x IS NOT NULL)                               AS reasons
+    FROM base_raw
+    GROUP BY peer_ip
+    HAVING COUNT(*) > 20
+        OR COUNT(*) FILTER (WHERE resp_code IN (401, 403)) > 3
+    ORDER BY severity_score DESC
+    LIMIT 50;">>,
+
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
 
-    select_args(Q, Base, #{ from => From, until => Until, site => Site }).
+    select_args(Q1, Base, #{ from => From, until => Until, site => Site }).
 
 
 access_log(Rsc, Context) ->
