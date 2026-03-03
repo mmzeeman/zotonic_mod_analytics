@@ -2,7 +2,7 @@
 %% @copyright 2024 Maas-Maarten Zeeman
 %% @doc View zotonic site analytics 
 
-%% Copyright 2024 Maas-Maarten Zeeman
+%% Copyright 2024-2026 Maas-Maarten Zeeman
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     Context4 = z_context:set(is_include_admin, IsIncludeAdmin, Context3),
 
     Vars = [
-        {page_admin_statistics, true},
+        {page_admin_analytics, true},
         {active_range, Range},
         {active_view, View},
         {is_include_bots, IsIncludeBots},

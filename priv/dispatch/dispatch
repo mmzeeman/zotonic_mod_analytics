@@ -1,5 +1,6 @@
 %% -*- mode: erlang -*-
 %% Dispatch rule for overview of configuration settings.
 [
-    {admin_analytics, ["admin", "analytics"], controller_admin_analytics, []}
+    {admin_analytics, ["admin", "analytics"], controller_admin_analytics, []},
+    {admin_site_health, ["admin", "site_health"], controller_admin_site_health, []}
 ].

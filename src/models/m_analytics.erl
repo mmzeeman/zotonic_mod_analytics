@@ -52,8 +52,10 @@
     session_duration_distribution/1, session_duration_distribution/3,
     traffic_by_hour_of_day/1, traffic_by_hour_of_day/3,
 
-    select/3
+    slow_pages/1,
+    suspicious_ips/1,
 
+    select/3
 ]).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -86,6 +88,12 @@ m_get([<<"popular_resources">> | Rest], _Msg, Context) ->
 m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_referrers(Rsc, Context), Rest}};
 
+m_get([<<"slow_pages">> | Rest], _Msg, Context) ->
+    {ok, {slow_pages(Context), Rest}};
+
+m_get([<<"suspicious_ips">> | Rest], _Msg, Context) ->
+    {ok, {suspicious_ips(Context), Rest}};
+
 m_get([<<"access_log">>, Rsc | Rest], _Msg, Context) ->
     {ok, {access_log(Rsc, Context), Rest}};
 
@@ -116,7 +124,7 @@ m_get(V, _Msg, _Context) ->
 
 %% Helper function to get date range based on context
 get_date_range(Context) ->
-    {Until, _} = z_datetime:to_datetime(<<"now">>),
+    {Until, _} = z_datetime:next_day(z_datetime:to_datetime(<<"now">>), 1),
     Range = z_context:get(active_range, Context, <<"28d">>),
     Days = case Range of
         <<"7d">> -> 7;
@@ -125,7 +133,7 @@ get_date_range(Context) ->
         _ -> 28  % Default to 28 days
     end,
     {From, _} = z_datetime:prev_day(Until, Days),
-    {{From, {0,0,0}}, {Until, {23, 59, 59}}}.
+    {{From, {0,0,0}}, {Until, {0, 0, 0}}}.
 
 page_views(Context) ->
     {From, Until} = get_date_range(Context),
@@ -307,6 +315,9 @@ get_base_filters(Context) ->
     build_filter(base, BaseFilters2, access_log, available_filters(), []).
 
 
+get_base_raw_filters(_Context) ->
+    BaseFilters = [site_filter, time_filter],
+    build_filter(base_raw, BaseFilters, access_log, available_filters(), []).
 
 build_filter(_Target, [], _Source, _Registry, Acc) ->
     lists:reverse(Acc);
@@ -484,61 +495,6 @@ ORDER BY
            ],
            Context).
 
-%    Q1 = <<"
-%WITH
-%    date_series AS (
-%        SELECT unnest(
-%            generate_series(
-%                date_trunc('day', $from::timestamp),
-%                date_trunc('day', $until::timestamp),
-%                INTERVAL 1 day
-%            )) AS day
-%    ),
-%    visitor_ids AS (
-%        SELECT
-%            md5(concat_ws('|', coalesce(peer_ip,''), coalesce(user_agent,''))) as visitor_id,
-%            timestamp
-%        FROM
-%            access_log
-%        WHERE
-%            site = $site
-%            AND timestamp >= $from
-%            AND timestamp <= $until
-%            AND resp_category = 2
-%            AND ", (no_bots_clause())/binary,
-%"
-%    ),
-%    unique_sessions AS (
-%        SELECT
-%            date_trunc('day', timestamp) AS day,
-%            count(DISTINCT visitor_id) AS unique
-%        FROM
-%            visitor_ids 
-%       GROUP BY
-%            day
-%    )
-%SELECT
-%    ds.day,
-%    COALESCE(us.unique, 0) AS unique
-%FROM
-%    date_series ds
-%LEFT JOIN
-%    unique_sessions us
-%ON
-%    ds.day = us.day
-%ORDER BY
-%    ds.day;
-%">>,
-%
-%    case z_duckdb:q(Q1, #{ from => From,
-%                            until => Until,
-%                            site => Site} ) of
-%        {ok, _, Data} ->
-%            Data;
-%        {error, Reason} ->
-%            ?LOG_WARNING(#{ text => <<"Could not get unique visitors">>, reason => Reason }),
-%            []
-%    end.
 
 erroring_pages(Context) ->
     {From, Until} = get_date_range(Context),
@@ -671,6 +627,98 @@ LIMIT 10">>,
                             reason => Reason }),
             []
     end.
+
+slow_pages(Context) ->
+    Base = get_base_raw_filters(Context),
+
+    Q = <<"
+    SELECT
+        path,
+        controller,
+        dispatch_rule,
+        COUNT(*)                                             AS hits,
+        ROUND(quantile_cont(duration_total, 0.50))           AS p50_ms,
+        ROUND(quantile_cont(duration_total, 0.95))           AS p95_ms,
+        ROUND(quantile_cont(duration_total, 0.99))           AS p99_ms,
+        MAX(duration_total)                                  AS max_ms,
+        ROUND(quantile_cont(duration_process, 0.95))         AS p95_process_ms,
+        ROUND(
+            quantile_cont(duration_total, 0.95) -
+            quantile_cont(duration_process, 0.95)
+        )                                                    AS p95_io_gap_ms,
+        -- What fraction of hits are slow
+        ROUND(100.0 * COUNT(*) FILTER (
+            WHERE duration_total > $slow_threshold_ms
+        ) / NULLIF(COUNT(*), 0), 1)                          AS pct_slow_hits
+    FROM base_raw
+    WHERE duration_total IS NOT NULL
+    GROUP BY path, controller, dispatch_rule
+    HAVING COUNT(*) > 10
+       AND quantile_cont(duration_total, 0.95) > $slow_threshold_ms
+    ORDER BY p95_ms DESC
+    LIMIT 50;">>,
+
+    Site = z_context:site(Context),
+    {From, Until} = get_date_range(Context),
+
+    select_args(Q, Base, #{ from => From, until => Until, site => Site, slow_threshold_ms => 1000 }).
+
+suspicious_ips(Context) ->
+    Base = get_base_raw_filters(Context),
+
+    Q = <<"SELECT
+        peer_ip,
+        COUNT(*)                                             AS requests,
+        COUNT(DISTINCT path)                                 AS unique_paths,
+        COUNT(DISTINCT session_id)                           AS sessions,
+        COUNT(*) FILTER (WHERE resp_code = 404)              AS not_founds,
+        COUNT(*) FILTER (WHERE resp_code IN (401, 403))      AS auth_errors,
+        COUNT(*) FILTER (WHERE resp_code >= 500)             AS server_errors,
+        -- Most common user agent for this IP
+        max(user_agent)                                      AS user_agent_sample,
+        MIN(timestamp)                                       AS first_seen,
+        MAX(timestamp)                                       AS last_seen,
+        -- Active hours — how many distinct hours did this IP appear
+        COUNT(DISTINCT date_trunc('hour', timestamp))        AS active_hours,
+        -- Requests in last hour of the window
+        COUNT(*) FILTER (
+            WHERE timestamp >= $until - INTERVAL '1 hour'
+        )                                                    AS req_last_hour,
+        -- Severity score
+        (COUNT(*) / 100)
+        + CASE WHEN COUNT(DISTINCT path)::FLOAT / NULLIF(COUNT(*), 0) > 0.5
+               THEN 20 ELSE 0 END
+        + (COUNT(*) FILTER (WHERE resp_code = 404) / 10)
+        + (COUNT(*) FILTER (WHERE resp_code IN (401, 403)) * 3)
+        + CASE WHEN COUNT(*) FILTER (
+                    WHERE timestamp >= $until - INTERVAL '1 hour'
+                  ) > 50
+                AND COUNT(*) FILTER (
+                    WHERE timestamp <  $until - INTERVAL '1 hour'
+                  ) = 0
+               THEN 15 ELSE 0 END                            AS severity_score,
+        list_filter([
+            CASE WHEN COUNT(*) > 500
+                 THEN 'high volume' END,
+            CASE WHEN COUNT(DISTINCT path)::FLOAT / NULLIF(COUNT(*), 0) > 0.5
+                 THEN 'path scan' END,
+            CASE WHEN COUNT(*) FILTER (WHERE resp_code = 404) > 50
+                 THEN '404 scan' END,
+            CASE WHEN COUNT(*) FILTER ( WHERE resp_code IN (401, 403)) > 5
+                 THEN 'auth probe' END
+        ], x -> x IS NOT NULL)                               AS reasons
+    FROM base_raw
+    GROUP BY peer_ip
+    HAVING COUNT(*) > 20
+        OR COUNT(*) FILTER (WHERE resp_code IN (401, 403)) > 3
+    ORDER BY severity_score DESC
+    LIMIT 50;">>,
+
+    Site = z_context:site(Context),
+    {From, Until} = get_date_range(Context),
+
+    select_args(Q, Base, #{ from => From, until => Until, site => Site }).
+
 
 access_log(Rsc, Context) ->
     To = z_datetime:to_datetime(<<"now">>),
@@ -1172,15 +1220,15 @@ select(Select, CTEs, Context) ->
     IsIncludeBots = z_context:get(is_include_bots, Context),
     IsIncludeAdmin = z_context:get(is_include_admin, Context),
 
+    select_args(Select, CTEs, #{ from => From,
+                                 until => Until,
+                                 site => Site,
+                                 include_admin => IsIncludeAdmin,
+                                 include_bots => IsIncludeBots }).
+
+select_args(Select, CTEs, Args) ->
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
-
-    %% io:fwrite(standard_error, "~s~n", [Query]),
-
-    case z_duckdb:q(Query, #{ from => From,
-                              until => Until,
-                              site => Site,
-                              include_admin => IsIncludeAdmin,
-                              include_bots => IsIncludeBots }) of
+    case z_duckdb:q(Query, Args) of
         {ok, _, Data} ->
             Data;
         {error, Reason} ->

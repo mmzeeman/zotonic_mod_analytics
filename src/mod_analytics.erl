@@ -43,5 +43,10 @@ observe_admin_menu(#admin_menu{}, Acc, Context) ->
                 parent=admin_modules,
                 label=?__("Analytics", Context),
                 url={admin_analytics, []},
+                visiblecheck={acl, use, ?MODULE}},
+     #menu_item{id=admin_site_health,
+                parent=admin_system,
+                label=?__("Site Health", Context),
+                url={admin_site_health, []},
                 visiblecheck={acl, use, ?MODULE}}
      |Acc].
