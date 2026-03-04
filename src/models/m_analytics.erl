@@ -665,26 +665,26 @@ broken_links(Context) ->
     Base = get_base_raw_filters(Context),
 
     Q = <<"
-    SELECT
-        path,
-        -- regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
-        referer      AS referer_domain,
-        bool_or(referer LIKE '%' || $site || '%')            AS is_internal,
-        COUNT(*)                                             AS hits,
-        COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
-        MIN(timestamp)                                       AS first_seen,
-        MAX(timestamp)                                       AS last_seen
-    FROM base_raw
-    WHERE resp_code = 404
-    GROUP BY path, referer_domain
-    HAVING COUNT(*) > 2
-    ORDER BY is_internal DESC, hits DESC
-    LIMIT 100;">>,
+SELECT
+    path,
+    regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
+    regexp_extract(referer, '^https?://([^/]+)', 1)
+        = $hostname                                      AS is_internal,
+    COUNT(*)                                             AS hits,
+    COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
+    MIN(timestamp)                                       AS first_seen,
+    MAX(timestamp)                                       AS last_seen
+FROM base_raw
+WHERE resp_code = 404
+GROUP BY path, referer_domain
+HAVING COUNT(*) > 2
+ORDER BY is_internal DESC, hits DESC
+LIMIT 100;">>,
 
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
 
-    select_args(Q, Base, #{ from => From, until => Until, site => Site }).
+    select_args(Q, Base, #{ from => From, until => Until, site => Site, hostname => z_context:hostname(Context) }).
 
 
 suspicious_ips(Context) ->
