@@ -678,7 +678,7 @@ broken_links(Context) ->
     GROUP BY path, referer_domain
     HAVING COUNT(*) > 2
     ORDER BY is_internal DESC, hits DESC
-    LIMIT 50;">>,
+    LIMIT 100;">>,
 
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
