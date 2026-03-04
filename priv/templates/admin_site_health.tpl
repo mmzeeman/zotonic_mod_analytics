@@ -6,19 +6,26 @@
 
 {% lib "css/analytics.css" %}
 
+{#
 <div class="btn-group pull-right">
     <a class="btn btn-default" href="{% url home %}">{_ Button _}</a>
 </div>
+#}
 <div class="admin-header">
     <h2>
         {_ Site Health _}
     </h2>
 </div>
 
+{#
 <div class="well z-button-row">
     <a class="btn btn-default" href="{% url home %}">{_ Another button _}</a>
 </div>
+#}
 
+{% with m.analytics.requests_per_minute as rpm %}
+    {% include "_card_simple_stat.tpl" format="si" title=_"Requests per minute (past hour)" trend_data=rpm|values:2 %}
+{% endwith %}
 
 {% with m.analytics.slow_pages as slow_pages %}
 <div class="panel panel-default">

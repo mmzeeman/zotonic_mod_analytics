@@ -97,6 +97,9 @@ m_get([<<"broken_links">> | Rest], _Msg, Context) ->
 m_get([<<"suspicious_ips">> | Rest], _Msg, Context) ->
     {ok, {suspicious_ips(Context), Rest}};
 
+m_get([<<"requests_per_minute">> | Rest], _Msg, Context) ->
+    {ok, {requests_per_minute(Context), Rest}};
+
 m_get([<<"access_log">>, Rsc | Rest], _Msg, Context) ->
     {ok, {access_log(Rsc, Context), Rest}};
 
@@ -689,55 +692,7 @@ LIMIT 50;">>,
 suspicious_ips(Context) ->
     Base = get_base_raw_filters(Context),
 
-    Q = <<"SELECT
-        peer_ip,
-        COUNT(*)                                             AS requests,
-        COUNT(DISTINCT path)                                 AS unique_paths,
-        COUNT(DISTINCT session_id)                           AS sessions,
-        COUNT(*) FILTER (WHERE resp_code = 404)              AS not_founds,
-        COUNT(*) FILTER (WHERE resp_code IN (401, 403))      AS auth_errors,
-        COUNT(*) FILTER (WHERE resp_code >= 500)             AS server_errors,
-        -- Most common user agent for this IP
-        max(user_agent)                                      AS user_agent_sample,
-        MIN(timestamp)                                       AS first_seen,
-        MAX(timestamp)                                       AS last_seen,
-        -- Active hours — how many distinct hours did this IP appear
-        COUNT(DISTINCT date_trunc('hour', timestamp))        AS active_hours,
-        -- Requests in last hour of the window
-        COUNT(*) FILTER (
-            WHERE timestamp >= $until - INTERVAL '1 hour'
-        )                                                    AS req_last_hour,
-        -- Severity score
-        (COUNT(*) / 100)
-        + CASE WHEN COUNT(DISTINCT path)::FLOAT / NULLIF(COUNT(*), 0) > 0.5
-               THEN 20 ELSE 0 END
-        + (COUNT(*) FILTER (WHERE resp_code = 404) / 10)
-        + (COUNT(*) FILTER (WHERE resp_code IN (401, 403)) * 3)
-        + CASE WHEN COUNT(*) FILTER (
-                    WHERE timestamp >= $until - INTERVAL '1 hour'
-                  ) > 50
-                AND COUNT(*) FILTER (
-                    WHERE timestamp <  $until - INTERVAL '1 hour'
-                  ) = 0
-               THEN 15 ELSE 0 END                            AS severity_score,
-        list_filter([
-            CASE WHEN COUNT(*) > 500
-                 THEN 'high volume' END,
-            CASE WHEN COUNT(DISTINCT path)::FLOAT / NULLIF(COUNT(*), 0) > 0.5
-                 THEN 'path scan' END,
-            CASE WHEN COUNT(*) FILTER (WHERE resp_code = 404) > 50
-                 THEN '404 scan' END,
-            CASE WHEN COUNT(*) FILTER ( WHERE resp_code IN (401, 403)) > 5
-                 THEN 'auth probe' END
-        ], x -> x IS NOT NULL)                               AS reasons
-    FROM base_raw
-    GROUP BY peer_ip
-    HAVING COUNT(*) > 20
-        OR COUNT(*) FILTER (WHERE resp_code IN (401, 403)) > 3
-    ORDER BY severity_score DESC
-    LIMIT 50;">>,
-
-    Q1 = <<"    SELECT
+    Q1 = <<"SELECT
         peer_ip,
         COUNT(*)                                             AS requests,
         COUNT(DISTINCT hash(peer_ip, user_agent))            AS visitor_ids,
@@ -796,6 +751,41 @@ suspicious_ips(Context) ->
 
     select_args(Q1, Base, #{ from => From, until => Until, site => Site }).
 
+requests_per_minute(Context) ->
+    Base = <<"base_raw AS (
+    SELECT timestamp
+    FROM access_log
+    WHERE site = $site
+      AND timestamp >= now()::timestamp - INTERVAL '1 hour'
+      AND timestamp <= now()::timestamp
+)">>,
+
+    PerMinute = <<"per_minute AS (
+    SELECT
+        time_bucket(INTERVAL '1 minute', timestamp) AS minute,
+        COUNT(*) AS requests
+    FROM base_raw
+    GROUP BY minute
+)">>,
+
+    Spine = <<"spine AS (
+    SELECT generate_series AS minute
+    FROM generate_series(
+        time_bucket(INTERVAL '1 minute', now()::timestamp - INTERVAL '1 hour'),
+        time_bucket(INTERVAL '1 minute', now()::timestamp),
+        INTERVAL '1 minute'
+    )
+)">>,
+
+    Q = <<"SELECT
+    s.minute,
+    COALESCE(p.requests, 0) AS requests
+FROM spine s
+LEFT JOIN per_minute p USING (minute)
+ORDER BY s.minute;">>,
+
+    Site = z_context:site(Context),
+    select_args(Q, [Base, PerMinute, Spine], #{ site => Site }).
 
 access_log(Rsc, Context) ->
     To = z_datetime:to_datetime(<<"now">>),
