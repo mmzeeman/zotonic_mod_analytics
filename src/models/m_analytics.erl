@@ -637,24 +637,21 @@ slow_pages(Context) ->
         controller,
         dispatch_rule,
         COUNT(*)                                             AS hits,
-        ROUND(quantile_cont(duration_total, 0.50))           AS p50_ms,
-        ROUND(quantile_cont(duration_total, 0.95))           AS p95_ms,
-        ROUND(quantile_cont(duration_total, 0.99))           AS p99_ms,
-        MAX(duration_total)                                  AS max_ms,
-        ROUND(quantile_cont(duration_process, 0.95))         AS p95_process_ms,
-        ROUND(
-            quantile_cont(duration_total, 0.95) -
-            quantile_cont(duration_process, 0.95)
-        )                                                    AS p95_io_gap_ms,
+        ROUND(quantile_cont(duration_total, 0.50)/1000)           AS p50_ms,
+        ROUND(quantile_cont(duration_total, 0.95)/1000)           AS p95_ms,
+        ROUND(quantile_cont(duration_total, 0.99)/1000)           AS p99_ms,
+        MAX(duration_total/1000)                                  AS max_ms,
+        ROUND(quantile_cont(duration_process, 0.95)/1000)         AS p95_process_ms,
+        ROUND((quantile_cont(duration_total, 0.95) - quantile_cont(duration_process, 0.95))/1000) AS p95_io_gap_ms,
         -- What fraction of hits are slow
         ROUND(100.0 * COUNT(*) FILTER (
-            WHERE duration_total > $slow_threshold_ms
-        ) / NULLIF(COUNT(*), 0), 1)                          AS pct_slow_hits
+            WHERE duration_total > ($slow_threshold_ms * 1000)
+        ) / NULLIF(COUNT(*), 0), 1) AS pct_slow_hits
     FROM base_raw
     WHERE duration_total IS NOT NULL
     GROUP BY path, controller, dispatch_rule
     HAVING COUNT(*) > 10
-       AND quantile_cont(duration_total, 0.95) > $slow_threshold_ms
+       AND quantile_cont(duration_total, 0.95) > ($slow_threshold_ms * 1000)
     ORDER BY p95_ms DESC
     LIMIT 50;">>,
 
