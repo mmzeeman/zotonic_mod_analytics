@@ -636,22 +636,19 @@ slow_pages(Context) ->
         path,
         controller,
         dispatch_rule,
-        COUNT(*)                                             AS hits,
-        ROUND(quantile_cont(duration_total, 0.50)/1000)           AS p50_ms,
-        ROUND(quantile_cont(duration_total, 0.95)/1000)           AS p95_ms,
-        ROUND(quantile_cont(duration_total, 0.99)/1000)           AS p99_ms,
-        MAX(duration_total/1000)                                  AS max_ms,
-        ROUND(quantile_cont(duration_process, 0.95)/1000)         AS p95_process_ms,
-        ROUND((quantile_cont(duration_total, 0.95) - quantile_cont(duration_process, 0.95))/1000) AS p95_io_gap_ms,
+        COUNT(*)                                          AS hits,
+        ROUND(quantile_cont(duration_total, 0.50)/1000)   AS p50_ms,
+        ROUND(quantile_cont(duration_total, 0.95)/1000)   AS p95_ms,
+        ROUND(quantile_cont(duration_total, 0.99)/1000)   AS p99_ms,
+        MAX(duration_total/1000)                          AS max_ms,
+        ROUND(quantile_cont(duration_process, 0.95)/1000) AS p95_process_ms,
+        ROUND((quantile_cont(duration_total, 0.95) - quantile_cont(duration_process, 0.95)) / 1000) AS p95_io_gap_ms,
         -- What fraction of hits are slow
-        ROUND(100.0 * COUNT(*) FILTER (
-            WHERE duration_total > ($slow_threshold_ms * 1000)
-        ) / NULLIF(COUNT(*), 0), 1) AS pct_slow_hits
+        ROUND(100.0 * COUNT(*) FILTER ( WHERE duration_total > ($slow_threshold_ms * 1000)) / NULLIF(COUNT(*), 0), 1) AS pct_slow_hits
     FROM base_raw
     WHERE duration_total IS NOT NULL
     GROUP BY path, controller, dispatch_rule
-    HAVING COUNT(*) > 10
-       AND quantile_cont(duration_total, 0.95) > ($slow_threshold_ms * 1000)
+    HAVING COUNT(*) > 10 AND quantile_cont(duration_total, 0.95) > ($slow_threshold_ms * 1000)
     ORDER BY p95_ms DESC
     LIMIT 50;">>,
 
@@ -1063,10 +1060,10 @@ response_time_distribution(From, Until, Context) ->
     Q = <<"
     SELECT 
         CASE 
-            WHEN duration_total < 100 THEN '<100ms'
-            WHEN duration_total >= 100 AND duration_total < 500 THEN '100-500ms'
-            WHEN duration_total >= 500 AND duration_total < 1000 THEN '500ms-1s'
-            WHEN duration_total >= 1000 AND duration_total < 3000 THEN '1s-3s'
+            WHEN duration_total / 1000 < 100 THEN '<100ms'
+            WHEN duration_total / 1000>= 100 AND duration_total / 1000 < 500 THEN '100-500ms'
+            WHEN duration_total /1000  >= 500 AND duration_total / 1000 < 1000 THEN '500ms-1s'
+            WHEN duration_total / 1000 >= 1000 AND duration_total / 1000 < 3000 THEN '1s-3s'
             ELSE '>3s'
         END as bucket,
         count(*) as count

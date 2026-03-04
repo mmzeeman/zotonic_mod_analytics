@@ -11,6 +11,13 @@
     --color-gray-dark: #333;
 }
 
+/* Use of code */
+.panel code {
+    color: inherit;
+    background-color: transparent;
+    padding: 0;
+}
+
 /* Chart Container Styles */
 .chart-container {
     position: relative;
