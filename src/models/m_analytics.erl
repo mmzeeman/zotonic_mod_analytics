@@ -677,7 +677,7 @@ broken_links(Context) ->
     WHERE resp_code = 404
     GROUP BY path, referer_domain
     HAVING COUNT(*) > 2
-    ORDER BY is_internal DESC, hits DESC, path DESC 
+    ORDER BY is_internal DESC, hits DESC
     LIMIT 50;">>,
 
     Site = z_context:site(Context),
