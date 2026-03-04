@@ -133,7 +133,7 @@
         <h3 class="panel-title">
             {_ 404 Pages _}
             {% if broken_links %}
-                <span class="badge" style="background:#c47900">{{ broken_links|length }}</span>
+                <span class="badge" style="background:#c47900">{{ broken_links | length }}</span>
             {% endif %}
         </h3>
     </div>
@@ -155,14 +155,14 @@
                 {% for path, referer_domain, is_internal, hits, unique_visitors, first_seen, last_seen in broken_links %}
                 <tr>
                     <td>
-                        <code>{{ path | escape }}</code>
+                        <code>{{ path | pprint }}</code>
                         {% if is_internal %}
                             <span class="label label-warning">{_ internal _}</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if referer_domain %}
-                            <code>{{ referer_domain | escape }}</code>
+                            <code>{{ referer_domain | pprint }}</code>
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
