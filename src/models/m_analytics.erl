@@ -667,10 +667,7 @@ broken_links(Context) ->
     Q = <<"
     SELECT
         path,
-        regexp_replace(
-            referer,
-            '^https?://([^/]+).*', '\1'
-        )                                                    AS referer_domain,
+        regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
         bool_or(referer LIKE '%' || $site || '%')            AS is_internal,
         COUNT(*)                                             AS hits,
         COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
@@ -680,7 +677,7 @@ broken_links(Context) ->
     WHERE resp_code = 404
     GROUP BY path, referer_domain
     HAVING COUNT(*) > 2
-    ORDER BY is_internal DESC, hits DESC
+    ORDER BY is_internal DESC, hits DESC, path DESC 
     LIMIT 50;">>,
 
     Site = z_context:site(Context),

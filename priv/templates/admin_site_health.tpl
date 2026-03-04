@@ -155,14 +155,14 @@
                 {% for path, referer_domain, is_internal, hits, unique_visitors, first_seen, last_seen in broken_links %}
                 <tr>
                     <td>
-                        <code>{{ path | pprint }}</code>
+                        <code>{{ path | escape }}</code>
                         {% if is_internal %}
                             <span class="label label-warning">{_ internal _}</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if referer_domain %}
-                            <code>{{ referer_domain | pprint }}</code>
+                            <code>{{ referer_domain | escape }}</code>
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
