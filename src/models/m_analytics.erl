@@ -667,7 +667,8 @@ broken_links(Context) ->
     Q = <<"
     SELECT
         path,
-        regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
+        -- regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
+        referer      AS referer_domain,
         bool_or(referer LIKE '%' || $site || '%')            AS is_internal,
         COUNT(*)                                             AS hits,
         COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
