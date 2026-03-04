@@ -662,27 +662,24 @@ slow_pages(Context) ->
 
 
 broken_links(Context) ->
-    Base = get_base_raw_filters(Context),
 
     Q = <<"
 SELECT
     path,
-    regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
-    regexp_extract(referer, '^https?://([^/]+)', 1)
-        = $hostname AND COUNT(DISTINCT session_id) FILTER (
-            WHERE session_id IS NOT NULL
-        ) > 0  AS is_internal,
-    COUNT(*)                                             AS hits,
-    COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
-    MIN(timestamp)                                       AS first_seen,
-    MAX(timestamp)                                       AS last_seen
+    regexp_extract(referer, '^https?://([^/]+)', 1) AS referer_domain,
+    regexp_extract(referer, '^https?://([^/]+)', 1) = $hostname AS is_internal,
+    COUNT(*) AS hits,
+    COUNT(DISTINCT hash(peer_ip, user_agent)) AS unique_visitors,
+    MIN(timestamp) AS first_seen,
+    MAX(timestamp) AS last_seen
 FROM base_raw
 WHERE resp_code = 404 AND req_method = 'GET'
 GROUP BY path, referer_domain
 HAVING COUNT(*) > 2
 ORDER BY is_internal DESC, hits DESC
-LIMIT 100;">>,
+LIMIT 50;">>,
 
+    Base = get_base_raw_filters(Context),
     Site = z_context:site(Context),
     {From, Until} = get_date_range(Context),
 
