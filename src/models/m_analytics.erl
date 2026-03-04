@@ -91,6 +91,9 @@ m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
 m_get([<<"slow_pages">> | Rest], _Msg, Context) ->
     {ok, {slow_pages(Context), Rest}};
 
+m_get([<<"broken_links">> | Rest], _Msg, Context) ->
+    {ok, {broken_links(Context), Rest}};
+
 m_get([<<"suspicious_ips">> | Rest], _Msg, Context) ->
     {ok, {suspicious_ips(Context), Rest}};
 
@@ -656,6 +659,35 @@ slow_pages(Context) ->
     {From, Until} = get_date_range(Context),
 
     select_args(Q, Base, #{ from => From, until => Until, site => Site, slow_threshold_ms => 1000 }).
+
+
+broken_links(Context) ->
+    Base = get_base_raw_filters(Context),
+
+    Q = <<"
+    SELECT
+        path,
+        regexp_replace(
+            referer,
+            '^https?://([^/]+).*', '\1'
+        )                                                    AS referer_domain,
+        bool_or(referer LIKE '%' || $site || '%')            AS is_internal,
+        COUNT(*)                                             AS hits,
+        COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
+        MIN(timestamp)                                       AS first_seen,
+        MAX(timestamp)                                       AS last_seen
+    FROM base_raw
+    WHERE resp_code = 404
+    GROUP BY path, referer_domain
+    HAVING COUNT(*) > 2
+    ORDER BY is_internal DESC, hits DESC
+    LIMIT 50;">>,
+
+    Site = z_context:site(Context),
+    {From, Until} = get_date_range(Context),
+
+    select_args(Q, Base, #{ from => From, until => Until, site => Site }).
+
 
 suspicious_ips(Context) ->
     Base = get_base_raw_filters(Context),

@@ -126,6 +126,73 @@
 </div>
 {% endwith %}
 
+{# Broken Links #}
+{% with m.analytics.broken_links as broken_links %}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">
+            {_ 404 Pages _}
+            {% if broken_links %}
+                <span class="badge" style="background:#c47900">{{ broken_links|length }}</span>
+            {% endif %}
+        </h3>
+    </div>
+
+    {% if broken_links %}
+    <div class="table-responsive">
+        <table class="table table-hover table-condensed" style="margin-bottom:0">
+            <thead>
+                <tr>
+                    <th>{_ Path _}</th>
+                    <th>{_ Referer _}</th>
+                    <th class="text-right">{_ Hits _}</th>
+                    <th class="text-right">{_ Visitors _}</th>
+                    <th>{_ First seen _}</th>
+                    <th>{_ Last seen _}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for path, referer_domain, is_internal, hits, unique_visitors, first_seen, last_seen in broken_links %}
+                <tr>
+                    <td>
+                        <code>{{ path | escape }}</code>
+                        {% if is_internal %}
+                            <span class="label label-warning">{_ internal _}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if referer_domain %}
+                            <code>{{ referer_domain | escape }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <code>
+                        {% if hits > 50 %}
+                            <span style="color:#c0392b">{{ hits }}</span>
+                        {% elseif hits > 10 %}
+                            <span style="color:#c47900">{{ hits }}</span>
+                        {% else %}
+                            {{ hits }}
+                        {% endif %}
+                        </code>
+                    </td>
+                    <td class="text-right"><code>{{ unique_visitors }}</code></td>
+                    <td><code>{{ first_seen }}</code></td>
+                    <td><code>{{ last_seen }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="panel-body text-center text-muted">
+        <span>✓</span> {_ No 404 pages detected _}
+    </div>
+    {% endif %}
+</div>
+{% endwith %}
 
 {% with m.analytics.suspicious_ips as suspicious_ips %}
 <div class="panel panel-default">
