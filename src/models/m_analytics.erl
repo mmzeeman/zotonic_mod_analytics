@@ -669,7 +669,9 @@ SELECT
     path,
     regexp_extract(referer, '^https?://([^/]+)', 1)      AS referer_domain,
     regexp_extract(referer, '^https?://([^/]+)', 1)
-        = $hostname                                      AS is_internal,
+        = $hostname AND COUNT(DISTINCT session_id) FILTER (
+            WHERE session_id IS NOT NULL
+        ) > 0  AS is_internal,
     COUNT(*)                                             AS hits,
     COUNT(DISTINCT hash(peer_ip, user_agent))            AS unique_visitors,
     MIN(timestamp)                                       AS first_seen,
