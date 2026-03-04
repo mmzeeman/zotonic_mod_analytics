@@ -677,7 +677,7 @@ SELECT
     MIN(timestamp)                                       AS first_seen,
     MAX(timestamp)                                       AS last_seen
 FROM base_raw
-WHERE resp_code = 404
+WHERE resp_code = 404 AND req_method = 'GET'
 GROUP BY path, referer_domain
 HAVING COUNT(*) > 2
 ORDER BY is_internal DESC, hits DESC
