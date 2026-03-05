@@ -741,8 +741,8 @@ suspicious_ips(Context) ->
         ], x -> x IS NOT NULL)                               AS reasons
     FROM base_raw
     GROUP BY peer_ip
-    HAVING COUNT(*) > 20
-        OR COUNT(*) FILTER (WHERE resp_code IN (401, 403)) > 3
+    HAVING COUNT(*) > 1000 
+        OR COUNT(*) FILTER (WHERE resp_code IN (401, 403)) > 30 
     ORDER BY severity_score DESC
     LIMIT 50;">>,
 
