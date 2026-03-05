@@ -130,7 +130,7 @@ m_get(V, _Msg, _Context) ->
 
 %% Helper function to get date range based on context
 get_date_range(Context) ->
-    {Until, _} = z_datetime:next_day(z_datetime:to_datetime(<<"now">>), 1),
+    {Until, _} = z_datetime:to_datetime(<<"now">>),
     Range = z_context:get(active_range, Context, <<"28d">>),
     Days = case Range of
         <<"7d">> -> 7;
@@ -139,7 +139,7 @@ get_date_range(Context) ->
         _ -> 28  % Default to 28 days
     end,
     {From, _} = z_datetime:prev_day(Until, Days),
-    {{From, {0,0,0}}, {Until, {0, 0, 0}}}.
+    {{From, {0,0,0}}, {Until, {23, 59, 59}}}.
 
 page_views(Context) ->
     {From, Until} = get_date_range(Context),
