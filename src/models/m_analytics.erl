@@ -1,8 +1,8 @@
 %% @author Maas-Maarten Zeeman <mmzeeman@xs4all.nl>
-%% @copyright 2024-2025 Maas-Maarten Zeeman
+%% @copyright 2024-2026 Maas-Maarten Zeeman
 %% @doc API to view statistics of a site. 
 
-%% Copyright 2024-2025 Maas-Maarten Zeeman
+%% Copyright 2024-2026 Maas-Maarten Zeeman
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -61,70 +61,77 @@
 -include_lib("zotonic_core/include/zotonic.hrl").
 
 %% TODO add access control to the api.
+m_get(Path, Msg, Context) ->
+    case z_acl:is_allowed(use, mod_analytics, Context) of
+        true ->
+            m_get_authorized(Path, Msg, Context);
+        false ->
+            {error, eacces}
+    end.
 
-m_get([<<"overview">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"overview">> | Rest], _Msg, Context) ->
     {ok, {overview(Context), Rest}};
 
-m_get([<<"stats_overview">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"stats_overview">> | Rest], _Msg, Context) ->
     {ok, {stats_overview(Context), Rest}};
 
-m_get([<<"rsc_stats_overview">>, Rsc | Rest], _Msg, Context) ->
+m_get_authorized([<<"rsc_stats_overview">>, Rsc | Rest], _Msg, Context) ->
     {ok, {rsc_stats_overview(Rsc, Context), Rest}};
 
-m_get([<<"unique_visitors">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"unique_visitors">> | Rest], _Msg, Context) ->
     {ok, {unique_visitors(Context), Rest}};
-m_get([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"dispatch_rule_health">> | Rest], _Msg, Context) ->
     {ok, {dispatch_rule_health(Context), Rest}};
 
-m_get([<<"popular_pages">>, Rsc | Rest], _Msg, Context) ->
+m_get_authorized([<<"popular_pages">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_rsc_pages(Rsc, Context), Rest}};
 
-m_get([<<"popular_pages">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"popular_pages">> | Rest], _Msg, Context) ->
     {ok, {popular_pages(Context), Rest}};
 
-m_get([<<"popular_resources">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"popular_resources">> | Rest], _Msg, Context) ->
     {ok, {popular_resources(Context), Rest}};
 
-m_get([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
+m_get_authorized([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_referrers(Rsc, Context), Rest}};
 
-m_get([<<"slow_pages">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"slow_pages">> | Rest], _Msg, Context) ->
     {ok, {slow_pages(Context), Rest}};
 
-m_get([<<"broken_links">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"broken_links">> | Rest], _Msg, Context) ->
     {ok, {broken_links(Context), Rest}};
 
-m_get([<<"suspicious_ips">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"suspicious_ips">> | Rest], _Msg, Context) ->
     {ok, {suspicious_ips(Context), Rest}};
 
-m_get([<<"requests_per_minute">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"requests_per_minute">> | Rest], _Msg, Context) ->
     {ok, {requests_per_minute(Context), Rest}};
 
-m_get([<<"access_log">>, Rsc | Rest], _Msg, Context) ->
+m_get_authorized([<<"access_log">>, Rsc | Rest], _Msg, Context) ->
     {ok, {access_log(Rsc, Context), Rest}};
 
-m_get([<<"user_activity">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"user_activity">> | Rest], _Msg, Context) ->
     {ok, {user_activity(Context), Rest}};
 
-m_get([<<"page_views">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"page_views">> | Rest], _Msg, Context) ->
     {ok, {page_views(Context), Rest}};
-m_get([<<"sessions">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"sessions">> | Rest], _Msg, Context) ->
     {ok, {sessions(Context), Rest}};
 
-m_get([<<"hourly_traffic">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"hourly_traffic">> | Rest], _Msg, Context) ->
     {ok, {hourly_traffic(Context), Rest}};
-m_get([<<"response_time_distribution">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"response_time_distribution">> | Rest], _Msg, Context) ->
     {ok, {response_time_distribution(Context), Rest}};
-m_get([<<"error_breakdown">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"error_breakdown">> | Rest], _Msg, Context) ->
     {ok, {error_breakdown(Context), Rest}};
-m_get([<<"traffic_sources">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"traffic_sources">> | Rest], _Msg, Context) ->
     {ok, {traffic_sources(Context), Rest}};
-m_get([<<"session_duration_distribution">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"session_duration_distribution">> | Rest], _Msg, Context) ->
     {ok, {session_duration_distribution(Context), Rest}};
-m_get([<<"traffic_by_hour_of_day">> | Rest], _Msg, Context) ->
+m_get_authorized([<<"traffic_by_hour_of_day">> | Rest], _Msg, Context) ->
     {ok, {traffic_by_hour_of_day(Context), Rest}};
 
-m_get(V, _Msg, _Context) ->
+m_get_authorized(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
 

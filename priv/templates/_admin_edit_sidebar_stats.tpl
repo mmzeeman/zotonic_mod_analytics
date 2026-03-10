@@ -1,7 +1,5 @@
 {% extends "admin_edit_widget_i18n.tpl" %}
 
-{% block widget_title %}<span class="glyphicon glyphicon-stats"></span> {_ Analytics _}{% endblock %}
-
 {% block widget_content %}
 {% with m.analytics.rsc_stats_overview[id] as stats_overview %}
 <div class="row" style="margin-bottom: 15px;">
