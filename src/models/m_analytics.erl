@@ -60,7 +60,8 @@
 
 -include_lib("zotonic_core/include/zotonic.hrl").
 
-%% TODO add access control to the api.
+m_get(_Path, _Msg, Context) when not (z_acl:is_allowed(use, mod_analytics, Context)) ->
+    {error, access_denied};
 
 m_get([<<"overview">> | Rest], _Msg, Context) ->
     {ok, {overview(Context), Rest}};
