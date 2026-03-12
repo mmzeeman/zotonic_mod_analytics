@@ -3,7 +3,8 @@
 
 -export([values/2, values/3]).
 
-
+values(undefined, _Context) ->
+    undefined;
 values(Map, _Context) when is_map(Map) ->
     maps:values(Map);
 values(List, _Context) when is_list(List) ->
