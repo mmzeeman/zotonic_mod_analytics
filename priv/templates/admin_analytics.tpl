@@ -10,18 +10,42 @@
 
 <div class="well">
     {% if is_include_admin %}
-        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots %}" class="btn btn-default">Include admin 🟢</a>
+        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=q.filter_user %}" class="btn btn-default">Include admin 🟢</a>
     {% else %}
-        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots include_admin=true %}" class="btn btn-default">Include admin ⚪</a>
+        <a href="{% url admin_analytics view=active_view range=active_range include_bots=q.include_bots include_admin=true filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=q.filter_user %}" class="btn btn-default">Include admin ⚪</a>
     {% endif %}
 
     {% if is_include_bots %}
-        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin %}" class="btn btn-default">Include bots 🟢</a>
+        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=q.filter_user %}" class="btn btn-default">Include bots 🟢</a>
     {% else %}
-        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=true %}" class="btn btn-default">Include bots ⚪</a>
+        <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=true filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=q.filter_user %}" class="btn btn-default">Include bots ⚪</a>
     {% endif %}
 
     {% include "_time_range_selector.tpl" active_range=active_range active_view=active_view %}
+
+    {% if filter_path or filter_rsc or filter_user %}
+    <div style="margin-top: 10px;">
+        <strong>{_ Active filters: _}</strong>
+        {% if filter_path %}
+            <span class="label label-info" style="font-size: 90%; margin-left: 5px;">
+                {_ Path _}: {{ filter_path | escape }}
+                <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_rsc=q.filter_rsc filter_user=q.filter_user %}" style="color: white; margin-left: 4px;" title="{_ Remove filter _}">&times;</a>
+            </span>
+        {% endif %}
+        {% if filter_rsc %}
+            <span class="label label-info" style="font-size: 90%; margin-left: 5px;">
+                {_ Resource _}: {{ filter_rsc.title | default:filter_rsc }}
+                <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_user=q.filter_user %}" style="color: white; margin-left: 4px;" title="{_ Remove filter _}">&times;</a>
+            </span>
+        {% endif %}
+        {% if filter_user %}
+            <span class="label label-info" style="font-size: 90%; margin-left: 5px;">
+                {_ User _}: {{ filter_user.title | default:filter_user }}
+                <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc %}" style="color: white; margin-left: 4px;" title="{_ Remove filter _}">&times;</a>
+            </span>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {% with %{ "unique": %{ title: _"Unique Visitors", index: 2, format: "si" },
@@ -41,7 +65,7 @@
     <div class="row">
         {% for view in views %}
             <div class="col-md-2 col-sm-4 col-xs-6">
-                <a href="{% url admin_analytics view=view range=active_range include_admin=q.include_admin include_bots=q.include_bots %}">
+                <a href="{% url admin_analytics view=view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=q.filter_user %}">
                     {% include "_card_simple_stat.tpl"
                            title=view_map[view].title
                            is_selected=(active_view == view)
@@ -153,7 +177,7 @@
                             </thead>
                             <tbody>
                                 {% for path, views, sessions, users in popular %}
-                                <tr>
+                                <tr style="cursor: pointer;" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=path filter_rsc=q.filter_rsc filter_user=q.filter_user %}'">
                                     <td>{{ path | escape }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
@@ -190,8 +214,8 @@
                             </thead>
                             <tbody>
                                 {% for id, views, sessions, users in popular %}
-                                <tr>
-                                    <td> <a href="{% url admin_edit_rsc id=id %}"> {{ id.title | default:id }} </a> </td>
+                                <tr style="cursor: pointer;" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}'">
+                                    <td>{{ id.title | default:id }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
                                     <td>{{ users }}</td>
@@ -228,8 +252,8 @@
                             </thead>
                             <tbody>
                                 {% for user_id, views, sessions, resources, paths in active_users %}
-                                <tr>
-                                    <td><a href="{% url admin_edit_rsc id=user_id %}">{{ user_id.title | default:user_id }}</a></td>
+                                <tr style="cursor: pointer;" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=user_id %}'">
+                                    <td>{{ user_id.title | default:user_id }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
                                     <td>{{ resources }}</td>

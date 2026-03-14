@@ -329,7 +329,22 @@ get_base_filters(Context) ->
                        false -> BaseFilters1 ++ [exclude_bots]
                    end,
 
-    build_filter(base, BaseFilters2, access_log, available_filters(), []).
+    BaseFilters3 = case z_context:get(filter_path, Context) of
+                       undefined -> BaseFilters2;
+                       _ -> BaseFilters2 ++ [filter_path]
+                   end,
+
+    BaseFilters4 = case z_context:get(filter_rsc, Context) of
+                       undefined -> BaseFilters3;
+                       _ -> BaseFilters3 ++ [filter_rsc]
+                   end,
+
+    BaseFilters5 = case z_context:get(filter_user, Context) of
+                       undefined -> BaseFilters4;
+                       _ -> BaseFilters4 ++ [filter_user]
+                   end,
+
+    build_filter(base, BaseFilters5, access_log, available_filters(), []).
 
 
 get_base_raw_filters(_Context) ->
@@ -1319,11 +1334,17 @@ select(Select, CTEs, Context) ->
     IsIncludeBots = z_context:get(is_include_bots, Context),
     IsIncludeAdmin = z_context:get(is_include_admin, Context),
 
-    select_args(Select, CTEs, #{ from => From,
-                                 until => Until,
-                                 site => Site,
-                                 include_admin => IsIncludeAdmin,
-                                 include_bots => IsIncludeBots }).
+    Args = #{ from => From,
+              until => Until,
+              site => Site,
+              include_admin => IsIncludeAdmin,
+              include_bots => IsIncludeBots },
+
+    Args1 = maybe_add_arg(filter_path, z_context:get(filter_path, Context), Args),
+    Args2 = maybe_add_arg(filter_rsc, z_context:get(filter_rsc, Context), Args1),
+    Args3 = maybe_add_arg(filter_user, z_context:get(filter_user, Context), Args2),
+
+    select_args(Select, CTEs, Args3).
 
 select_args(Select, CTEs, Args) ->
     Query = [<<"WITH ">>, lists:join($,, CTEs), " ", Select],
@@ -1337,6 +1358,10 @@ select_args(Select, CTEs, Args) ->
 
 %%
 %% Helpers
+
+maybe_add_arg(_Key, undefined, Args) -> Args;
+maybe_add_arg(Key, Value, Args) -> Args#{ Key => Value }.
+
 %%
 
 cte(Name, Query) ->
@@ -1368,6 +1393,15 @@ exclude_bots(Source) ->
     star_filter(Source, <<"WHERE regexp_matches(user_agent,
     'bot|crawl|spider|slurp|bingpreview|facebook|twitter|linkedinbot|whatsapp|telegram|curl|wget|python|java|go-http|okhttp|axios|postman|libwww|zgrab|nuclei|nmap|masscan|scanbot|dataforseo|semrush|ahrefs|mj12', 'i') = false">>).
 
+filter_path(Source) ->
+    star_filter(Source, <<"WHERE path = $filter_path">>).
+
+filter_rsc(Source) ->
+    star_filter(Source, <<"WHERE rsc_id = $filter_rsc">>).
+
+filter_user(Source) ->
+    star_filter(Source, <<"WHERE user_id = $filter_user">>).
+
 pageviews(Source) ->
     <<"SELECT
     hash(peer_ip, user_agent) as visitor_id,
@@ -1398,5 +1432,8 @@ available_filters() ->
       exclude_controller_file => fun exclude_controller_file/1,
       exclude_controller_fileuploader => fun exclude_controller_fileuploader/1,
       exclude_admin => fun exclude_admin/1,
-      exclude_bots => fun exclude_bots/1
+      exclude_bots => fun exclude_bots/1,
+      filter_path => fun filter_path/1,
+      filter_rsc => fun filter_rsc/1,
+      filter_user => fun filter_user/1
      }.

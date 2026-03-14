@@ -46,18 +46,41 @@ process(_Method, _AcceptedCT, _ProvidedCT, Context) ->
     IsIncludeAdmin = z_convert:to_bool(z_context:get_q(<<"include_admin">>, Context, false)),
     IsIncludeBots = z_convert:to_bool(z_context:get_q(<<"include_bots">>, Context, false)),
 
+    %% Row click filters
+    FilterPath = non_empty_binary(z_context:get_q(<<"filter_path">>, Context)),
+    FilterRsc = to_integer_or_undefined(z_context:get_q(<<"filter_rsc">>, Context)),
+    FilterUser = to_integer_or_undefined(z_context:get_q(<<"filter_user">>, Context)),
+
     Context1 = z_context:set(active_range, Range, Context),
     Context2 = z_context:set(active_view, View, Context1),
     Context3 = z_context:set(is_include_bots, IsIncludeBots, Context2),
     Context4 = z_context:set(is_include_admin, IsIncludeAdmin, Context3),
+    Context5 = z_context:set(filter_path, FilterPath, Context4),
+    Context6 = z_context:set(filter_rsc, FilterRsc, Context5),
+    Context7 = z_context:set(filter_user, FilterUser, Context6),
 
     Vars = [
         {page_admin_analytics, true},
         {active_range, Range},
         {active_view, View},
         {is_include_bots, IsIncludeBots},
-        {is_include_admin, IsIncludeAdmin}
+        {is_include_admin, IsIncludeAdmin},
+        {filter_path, FilterPath},
+        {filter_rsc, FilterRsc},
+        {filter_user, FilterUser}
     ],
-    Html = z_template:render("admin_analytics.tpl", Vars, Context4),
-    z_context:output(Html, Context4).
+    Html = z_template:render("admin_analytics.tpl", Vars, Context7),
+    z_context:output(Html, Context7).
+
+non_empty_binary(undefined) -> undefined;
+non_empty_binary(<<>>) -> undefined;
+non_empty_binary(V) when is_binary(V) -> V;
+non_empty_binary(_) -> undefined.
+
+to_integer_or_undefined(undefined) -> undefined;
+to_integer_or_undefined(<<>>) -> undefined;
+to_integer_or_undefined(V) ->
+    try z_convert:to_integer(V)
+    catch _:_ -> undefined
+    end.
 
