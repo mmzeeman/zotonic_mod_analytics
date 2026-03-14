@@ -1087,8 +1087,7 @@ no_bots_clause() ->
 
 %% @doc Get hourly traffic for the last 24 hours
 hourly_traffic(Context) ->
-    HoursSpine = <<"
-    WITH all_hours AS (
+    HoursSpine = <<"all_hours AS (
         SELECT unnest(generate_series(0, 23)) as hour_of_day
     )">>,
 
@@ -1284,8 +1283,7 @@ session_duration_distribution(From, Until, Context) ->
 
 %% @doc Get traffic pattern by hour of day (aggregate)
 traffic_by_hour_of_day(Context) ->
-    HoursSpine = <<"
-    WITH all_hours AS (
+    HoursSpine = <<"all_hours AS (
         SELECT unnest(generate_series(0, 23)) as hour_of_day
     )">>,
 
