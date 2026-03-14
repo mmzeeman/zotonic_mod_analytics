@@ -40,7 +40,7 @@
         {% endif %}
         {% if filter_user %}
             <span class="label label-info" style="font-size: 90%; margin-left: 5px;">
-                {_ User _}: {{ filter_user.title | default:filter_user }}
+                {_ User _}: {% include "analytics/_user_title.tpl" id=filter_user %}
                 <a href="{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc %}" style="color: white; margin-left: 4px;" title="{_ Remove filter _}">&times;</a>
             </span>
         {% endif %}
@@ -215,7 +215,7 @@
                             <tbody data-onclick-topic="model/location/post/redirect-local">
                                 {% for id, views, sessions, users in popular %}
                                 <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}"}'>
-                                    <td>{{ id.title | default:id }}</td>
+                                    <td>{% if id | is_a:"person" %}{% include "analytics/_user_title.tpl" id=id %}{% else %}{{ id.title | default:id }}{% endif %}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
                                     <td>{{ users }}</td>
@@ -253,7 +253,7 @@
                             <tbody data-onclick-topic="model/location/post/redirect-local">
                                 {% for user_id, views, sessions, resources, paths in active_users %}
                                 <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=user_id %}"}'>
-                                    <td>{{ user_id.title | default:user_id }}</td>
+                                    <td>{% include "analytics/_user_title.tpl" id=user_id %}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
                                     <td>{{ resources }}</td>
