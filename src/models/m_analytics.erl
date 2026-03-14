@@ -877,7 +877,7 @@ popular_resources(Context) ->
     count(distinct session_id),
     count(distinct user_id)
 FROM
-    access_log
+    base
 WHERE
     rsc_id IS NOT NULL
 GROUP BY
