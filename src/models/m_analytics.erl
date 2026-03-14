@@ -51,7 +51,7 @@
     error_breakdown/1, error_breakdown/3,
     traffic_sources/1, traffic_sources/3,
     session_duration_distribution/1, session_duration_distribution/3,
-    traffic_by_hour_of_day/1, traffic_by_hour_of_day/3,
+    traffic_by_hour_of_day/1,
 
     slow_pages/1,
     suspicious_ips/1,
@@ -1284,31 +1284,23 @@ session_duration_distribution(From, Until, Context) ->
 
 %% @doc Get traffic pattern by hour of day (aggregate)
 traffic_by_hour_of_day(Context) ->
-    {From, Until} = get_date_range(Context),
-    traffic_by_hour_of_day(From, Until, Context).
-
-traffic_by_hour_of_day(From, Until, Context) ->
-    Site = z_context:site(Context),
-    Q = <<"
+    HoursSpine = <<"
     WITH all_hours AS (
         SELECT unnest(generate_series(0, 23)) as hour_of_day
-    ),
-    hourly_data AS (
+    )">>,
+
+    HourlyData = <<"hourly_data AS (
         SELECT 
             hour(timestamp) as hour_of_day,
             count(*) as requests,
             count(DISTINCT session_id) as sessions
         FROM 
-            access_log
-        WHERE 
-            site = $site
-            AND timestamp >= $from
-            AND timestamp <= $until
-            AND ", (no_bots_clause())/binary, "
+            base
         GROUP BY 
             hour_of_day
-    )
-    SELECT 
+    )">>,
+
+    Q = <<"SELECT 
         all_hours.hour_of_day,
         COALESCE(hourly_data.requests, 0) as requests,
         COALESCE(hourly_data.sessions, 0) as sessions
@@ -1318,14 +1310,9 @@ traffic_by_hour_of_day(From, Until, Context) ->
     ORDER BY 
         all_hours.hour_of_day
     ">>,
-    
-    case z_duckdb:q(Q, #{ from => From, until => Until, site => Site }) of
-        {ok, _, Data} ->
-            Data;
-        {error, Reason} ->
-            ?LOG_WARNING(#{ text => <<"Could not get traffic by hour of day">>, reason => Reason }),
-            []
-    end.
+
+    Base = get_base_filters(Context),
+    select(Q, Base ++ [ HoursSpine, HourlyData ], Context).
 
 
 select(Select, CTEs, Context) ->
