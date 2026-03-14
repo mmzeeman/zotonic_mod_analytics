@@ -177,7 +177,7 @@
                             </thead>
                             <tbody>
                                 {% for path, views, sessions, users in popular %}
-                                <tr style="cursor: pointer;" tabindex="0" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=path filter_rsc=q.filter_rsc filter_user=q.filter_user %}'" onkeydown="if(event.key==='Enter')this.click()">
+                                <tr style="cursor: pointer;" data-onclick-topic="model/location/post/redirect" data-onclick-message='{"url": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=path filter_rsc=q.filter_rsc filter_user=q.filter_user %}"}'>
                                     <td>{{ path | escape }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
@@ -214,7 +214,7 @@
                             </thead>
                             <tbody>
                                 {% for id, views, sessions, users in popular %}
-                                <tr style="cursor: pointer;" tabindex="0" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}'" onkeydown="if(event.key==='Enter')this.click()">
+                                <tr style="cursor: pointer;" data-onclick-topic="model/location/post/redirect" data-onclick-message='{"url": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}"}'>
                                     <td>{{ id.title | default:id }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
@@ -252,7 +252,7 @@
                             </thead>
                             <tbody>
                                 {% for user_id, views, sessions, resources, paths in active_users %}
-                                <tr style="cursor: pointer;" tabindex="0" onclick="window.location.href='{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=user_id %}'" onkeydown="if(event.key==='Enter')this.click()">
+                                <tr style="cursor: pointer;" data-onclick-topic="model/location/post/redirect" data-onclick-message='{"url": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=q.filter_rsc filter_user=user_id %}"}'>
                                     <td>{{ user_id.title | default:user_id }}</td>
                                     <td>{{ views }}</td>
                                     <td>{{ sessions }}</td>
