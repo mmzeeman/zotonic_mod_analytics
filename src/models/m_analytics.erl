@@ -33,6 +33,7 @@
 
     popular_pages/1,
     popular_resources/1,
+    most_active_users/1,
     hourly_traffic/1,
 
     popular_rsc_pages/2,
@@ -91,6 +92,9 @@ m_get_authorized([<<"popular_pages">> | Rest], _Msg, Context) ->
 
 m_get_authorized([<<"popular_resources">> | Rest], _Msg, Context) ->
     {ok, {popular_resources(Context), Rest}};
+
+m_get_authorized([<<"most_active_users">> | Rest], _Msg, Context) ->
+    {ok, {most_active_users(Context), Rest}};
 
 m_get_authorized([<<"popular_referrers">>, Rsc | Rest], _Msg, Context) ->
     {ok, {popular_referrers(Rsc, Context), Rest}};
@@ -885,6 +889,27 @@ GROUP BY
 ORDER BY
     COUNT(*) DESC,
     rsc_id
+LIMIT 10">>,
+
+    Base = get_base_filters(Context),
+    select(Q, Base, Context).
+
+most_active_users(Context) ->
+    Q = <<"SELECT
+    user_id,
+    count(*),
+    count(distinct session_id),
+    count(distinct rsc_id),
+    count(distinct path)
+FROM
+    base
+WHERE
+    user_id IS NOT NULL
+GROUP BY
+    user_id
+ORDER BY
+    COUNT(*) DESC,
+    user_id
 LIMIT 10">>,
 
     Base = get_base_filters(Context),

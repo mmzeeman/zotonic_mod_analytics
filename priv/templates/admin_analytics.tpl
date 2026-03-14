@@ -206,6 +206,45 @@
     </div>
     {% endwith %}
 
+    {# Most Active Users Section #}
+    {% with m.analytics.most_active_users as active_users %}
+    <div class="row" style="margin-bottom: 20px;">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">{_ Most Active Users _}</h3>
+                </div>
+                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>{_ User _}</th>
+                                    <th>{_ Views _}</th>
+                                    <th>{_ Sessions _}</th>
+                                    <th>{_ Resources _}</th>
+                                    <th>{_ Paths _}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_id, views, sessions, resources, paths in active_users %}
+                                <tr>
+                                    <td><a href="{% url admin_edit_rsc id=user_id %}">{{ user_id.title | default:user_id }}</a></td>
+                                    <td>{{ views }}</td>
+                                    <td>{{ sessions }}</td>
+                                    <td>{{ resources }}</td>
+                                    <td>{{ paths }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
 </div>
 {% endwith %}
 
