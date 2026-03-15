@@ -141,13 +141,13 @@ m_get_authorized(V, _Msg, _Context) ->
     {error, unknown_path}.
 
 %% @doc Extract filter arguments from the message payload and set them on the context.
+%% Payload keys from the :: operator are binaries, but context consumers use atom keys.
 set_payload_args(#{ payload := Args }, Context) when is_map(Args) ->
-    Filters = [<<"active_range">>,
-               <<"is_include_admin">>,
-               <<"is_include_bots">>,
-               <<"filter_path">>, <<"filter_rsc">>, <<"filter_user">>],
+    Filters = [active_range, is_include_admin, is_include_bots,
+               filter_path, filter_rsc, filter_user],
     lists:foldl(fun(Key, Ctx) ->
-        case maps:get(Key, Args, maps:get(Key, Args, undefined)) of
+        BinKey = atom_to_binary(Key, utf8),
+        case maps:get(BinKey, Args, maps:get(Key, Args, undefined)) of
             undefined -> Ctx;
             Value -> z_context:set(Key, Value, Ctx)
         end

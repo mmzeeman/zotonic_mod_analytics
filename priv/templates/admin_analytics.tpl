@@ -120,79 +120,79 @@
             </a>
         </div>
 
-    {# Popular Pages Section #}
-    {% with m.analytics.popular_pages as popular %}
+    {# Popular Resources & Pages (tabbed panel, resources shown by default) #}
     <div class="row" style="margin-bottom: 20px;">
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">{_ Popular Pages _}</h3>
+                    <ul class="nav nav-tabs" role="tablist" style="border-bottom: none; margin: -10px -15px -11px;">
+                        <li role="presentation" class="active">
+                            <a href="#popular-resources" aria-controls="popular-resources" role="tab" data-toggle="tab">{_ Popular Resources _}</a>
+                        </li>
+                        <li role="presentation">
+                            <a href="#popular-pages" aria-controls="popular-pages" role="tab" data-toggle="tab">{_ Popular Pages _}</a>
+                        </li>
+                    </ul>
                 </div>
                 <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-condensed">
-                            <thead>
-                                <tr>
-                                    <th>{_ Path _}</th>
-                                    <th>{_ Views _}</th>
-                                    <th>{_ Sessions _}</th>
-                                    <th>{_ Users _}</th>
-                                </tr>
-                            </thead>
-                            <tbody data-onclick-topic="model/location/post/redirect-local">
-                                {% for path, views, sessions, users in popular %}
-                                <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=path filter_rsc=q.filter_rsc filter_user=q.filter_user %}"}'>
-                                    <td>{{ path | escape }}</td>
-                                    <td>{{ views }}</td>
-                                    <td>{{ sessions }}</td>
-                                    <td>{{ users }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="popular-resources">
+                            {% with m.analytics.popular_resources as popular %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>{_ Resource _}</th>
+                                            <th>{_ Views _}</th>
+                                            <th>{_ Sessions _}</th>
+                                            <th>{_ Users _}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-onclick-topic="model/location/post/redirect-local">
+                                        {% for id, views, sessions, users in popular %}
+                                        <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}"}'>
+                                            <td>{% if id | is_a:"person" %}{% include "analytics/_user_title.tpl" id=id %}{% else %}{{ id.title | default:id }}{% endif %}</td>
+                                            <td>{{ views }}</td>
+                                            <td>{{ sessions }}</td>
+                                            <td>{{ users }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endwith %}
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="popular-pages">
+                            {% with m.analytics.popular_pages as popular %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>{_ Path _}</th>
+                                            <th>{_ Views _}</th>
+                                            <th>{_ Sessions _}</th>
+                                            <th>{_ Users _}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody data-onclick-topic="model/location/post/redirect-local">
+                                        {% for path, views, sessions, users in popular %}
+                                        <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=path filter_rsc=q.filter_rsc filter_user=q.filter_user %}"}'>
+                                            <td>{{ path | escape }}</td>
+                                            <td>{{ views }}</td>
+                                            <td>{{ sessions }}</td>
+                                            <td>{{ users }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endwith %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    {% endwith %}
-
-    {# Popular Resources Section #}
-    {% with m.analytics.popular_resources as popular %}
-    <div class="row" style="margin-bottom: 20px;">
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">{_ Popular Resources _}</h3>
-                </div>
-                <div class="panel-body" style="max-height: 400px; overflow-y: auto;">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-condensed">
-                            <thead>
-                                <tr>
-                                    <th>{_ Resource _}</th>
-                                    <th>{_ Views _}</th>
-                                    <th>{_ Sessions _}</th>
-                                    <th>{_ Users _}</th>
-                                </tr>
-                            </thead>
-                            <tbody data-onclick-topic="model/location/post/redirect-local">
-                                {% for id, views, sessions, users in popular %}
-                                <tr style="cursor: pointer;" tabindex="0" data-onclick-message='{"href": "{% url admin_analytics view=active_view range=active_range include_admin=q.include_admin include_bots=q.include_bots filter_path=q.filter_path filter_rsc=id filter_user=q.filter_user %}"}'>
-                                    <td>{% if id | is_a:"person" %}{% include "analytics/_user_title.tpl" id=id %}{% else %}{{ id.title | default:id }}{% endif %}</td>
-                                    <td>{{ views }}</td>
-                                    <td>{{ sessions }}</td>
-                                    <td>{{ users }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endwith %}
 
     {# Most Active Users Section #}
     {% with m.analytics.most_active_users as active_users %}
