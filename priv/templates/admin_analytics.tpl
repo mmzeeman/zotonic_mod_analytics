@@ -107,7 +107,13 @@
             {% wire id=#hourly_traffic
                     action={dialog_open title=_"Traffic by Hour of Day"
                                         width="large"
-                                        template="_dialog_hourly_traffic.tpl" }
+                                        template="_dialog_hourly_traffic.tpl"
+                                        active_range=active_range
+                                        is_include_admin=is_include_admin
+                                        is_include_bots=is_include_bots
+                                        filter_path=filter_path
+                                        filter_rsc=filter_rsc
+                                        filter_user=filter_user }
             %}
             <a href="#hourly_traffic" id="{{ #hourly_traffic }}" class="btn btn-default" role="button">
                 <span class="glyphicon glyphicon-time"></span> {_ Traffic by Hour of Day _}

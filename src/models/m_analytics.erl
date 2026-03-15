@@ -134,10 +134,20 @@ m_get_authorized([<<"session_duration_distribution">> | Rest], _Msg, Context) ->
     {ok, {session_duration_distribution(Context), Rest}};
 m_get_authorized([<<"traffic_by_hour_of_day">> | Rest], _Msg, Context) ->
     {ok, {traffic_by_hour_of_day(Context), Rest}};
+m_get_authorized([{traffic_by_hour_of_day, Args} | Rest], _Msg, Context) ->
+    Context1 = set_args(Args, Context),
+    {ok, {traffic_by_hour_of_day(Context1), Rest}};
 
 m_get_authorized(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
+
+%% @doc Set context variables from a proplist of arguments.
+set_args([], Context) -> Context;
+set_args([{_Key, undefined} | Rest], Context) ->
+    set_args(Rest, Context);
+set_args([{Key, Value} | Rest], Context) ->
+    set_args(Rest, z_context:set(Key, Value, Context)).
 
 %% Helper function to get date range based on context
 get_date_range(Context) ->
