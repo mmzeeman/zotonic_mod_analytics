@@ -132,22 +132,27 @@ m_get_authorized([<<"traffic_sources">> | Rest], _Msg, Context) ->
     {ok, {traffic_sources(Context), Rest}};
 m_get_authorized([<<"session_duration_distribution">> | Rest], _Msg, Context) ->
     {ok, {session_duration_distribution(Context), Rest}};
-m_get_authorized([<<"traffic_by_hour_of_day">> | Rest], _Msg, Context) ->
-    {ok, {traffic_by_hour_of_day(Context), Rest}};
-m_get_authorized([{traffic_by_hour_of_day, Args} | Rest], _Msg, Context) ->
-    Context1 = set_args(Args, Context),
+m_get_authorized([<<"traffic_by_hour_of_day">> | Rest], Msg, Context) ->
+    Context1 = set_payload_args(Msg, Context),
     {ok, {traffic_by_hour_of_day(Context1), Rest}};
 
 m_get_authorized(V, _Msg, _Context) ->
     ?LOG_INFO("Unknown ~p lookup: ~p", [?MODULE, V]),
     {error, unknown_path}.
 
-%% @doc Set context variables from a proplist of arguments.
-set_args([], Context) -> Context;
-set_args([{_Key, undefined} | Rest], Context) ->
-    set_args(Rest, Context);
-set_args([{Key, Value} | Rest], Context) ->
-    set_args(Rest, z_context:set(Key, Value, Context)).
+%% @doc Extract filter arguments from the message payload and set them on the context.
+set_payload_args(#{ payload := Args }, Context) when is_map(Args) ->
+    Filters = [active_range, is_include_admin, is_include_bots,
+               filter_path, filter_rsc, filter_user],
+    lists:foldl(fun(Key, Ctx) ->
+        BinKey = atom_to_binary(Key, utf8),
+        case maps:get(BinKey, Args, maps:get(Key, Args, undefined)) of
+            undefined -> Ctx;
+            Value -> z_context:set(Key, Value, Ctx)
+        end
+    end, Context, Filters);
+set_payload_args(_, Context) ->
+    Context.
 
 %% Helper function to get date range based on context
 get_date_range(Context) ->

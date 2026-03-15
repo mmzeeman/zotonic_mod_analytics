@@ -1,9 +1,11 @@
-{% with m.analytics[{traffic_by_hour_of_day active_range=active_range
-                                            is_include_admin=is_include_admin
-                                            is_include_bots=is_include_bots
-                                            filter_path=filter_path
-                                            filter_rsc=filter_rsc
-                                            filter_user=filter_user}] as hourly_data %}
+{% with m.analytics.traffic_by_hour_of_day::%{
+    active_range: active_range,
+    is_include_admin: is_include_admin,
+    is_include_bots: is_include_bots,
+    filter_path: filter_path,
+    filter_rsc: filter_rsc,
+    filter_user: filter_user
+} as hourly_data %}
 {% if hourly_data %}
     <ul class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active">
