@@ -321,12 +321,12 @@ get_base_filters(Context) ->
 
     BaseFilters1 = case z_context:get(is_include_admin, Context) of
                        true -> BaseFilters;
-                       false -> BaseFilters ++ [exclude_admin]
+                       _ -> BaseFilters ++ [exclude_admin]
                    end,
 
     BaseFilters2 = case z_context:get(is_include_bots, Context) of
                        true -> BaseFilters1;
-                       false -> BaseFilters1 ++ [exclude_bots]
+                       _ -> BaseFilters1 ++ [exclude_bots]
                    end,
 
     BaseFilters3 = case z_context:get(filter_path, Context) of
