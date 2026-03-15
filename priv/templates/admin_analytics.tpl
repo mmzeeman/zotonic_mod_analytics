@@ -102,58 +102,16 @@
     {# Main Visualizations Grid #}
     <div class="analytics-grid">
         
-        {# Panel: Traffic by Hour of Day #}
-        <div class="analytics-grid-full">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">
-                        {_ Traffic by Hour of Day _}
-                        <small class="text-muted">{_ (aggregated across all days) _}</small>
-                    </h3>
-                </div>
-                <div class="panel-body">
-                    {% with m.analytics.traffic_by_hour_of_day as hourly_data %}
-                    {% if hourly_data %}
-                        {% with hourly_data | element:1 as hours %}
-                        {% with hourly_data | element:2 as requests %}
-                        {% with hours | zip:requests as chart_data %}
-                        {% include "_chart_bar.tpl" 
-                            data=chart_data 
-                            title=""
-                            height=300
-                            width=1000
-                            show_grid=1
-                            show_values=1
-                            y_axis_label=_"Requests"
-                            x_axis_label=_"Hour of Day" %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-
-                        {% with hourly_data | element:1 as hours %}
-                        {% with hourly_data | element:3 as requests %}
-                        {% with hours | zip:requests as chart_data %}
-                        {% include "_chart_bar.tpl" 
-                            data=chart_data 
-                            title=""
-                            height=300
-                            width=1000
-                            show_grid=1
-                            show_values=1
-                            y_axis_label=_"Sessions"
-                            x_axis_label=_"Hour of Day" %}
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        <div class="chart-empty">
-                            <div class="chart-empty-icon">📊</div>
-                            <div class="chart-empty-text">{_ No hourly traffic data available _}</div>
-                        </div>
-                    {% endif %}
-                    {% endwith %}
-                </div>
-            </div>
+        {# Button: Traffic by Hour of Day (opens popup) #}
+        <div class="analytics-grid-full" style="margin-bottom: 20px;">
+            {% wire id=#hourly_traffic
+                    action={dialog_open title=_"Traffic by Hour of Day"
+                                        width="large"
+                                        template="_dialog_hourly_traffic.tpl" }
+            %}
+            <a href="#hourly_traffic" id="{{ #hourly_traffic }}" class="btn btn-default" role="button">
+                <span class="glyphicon glyphicon-time"></span> {_ Traffic by Hour of Day _}
+            </a>
         </div>
 
     {# Popular Pages Section #}
