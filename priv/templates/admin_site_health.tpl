@@ -23,9 +23,7 @@
 </div>
 #}
 
-{% with m.analytics.requests_per_minute as rpm %}
-    {% include "_card_simple_stat.tpl" format="si" title=_"Requests per minute (past hour)" trend_data=rpm|values:2 %}
-{% endwith %}
+{% include "_admin_health_rpm_panel.tpl" %}
 
 {% with m.analytics.slow_pages as slow_pages %}
 <div class="panel panel-default">

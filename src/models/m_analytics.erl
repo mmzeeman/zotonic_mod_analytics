@@ -795,7 +795,9 @@ suspicious_ips(Context) ->
 
 requests_per_minute(Context) ->
     Base = <<"base_raw AS (
-    SELECT timestamp
+    SELECT
+        timestamp,
+        resp_category
     FROM access_log
     WHERE site = $site
       AND timestamp >= now()::timestamp - INTERVAL '1 hour'
@@ -805,9 +807,16 @@ requests_per_minute(Context) ->
     PerMinute = <<"per_minute AS (
     SELECT
         time_bucket(INTERVAL '1 minute', timestamp) AS minute,
-        COUNT(*) AS requests
-    FROM base_raw
-    GROUP BY minute
+        COUNT(*) AS requests,
+        COUNT(*) FILTER (WHERE resp_category = 1) AS infos,
+        COUNT(*) FILTER (WHERE resp_category = 2) AS successes,
+        COUNT(*) FILTER (WHERE resp_category = 3) AS redirections,
+        COUNT(*) FILTER (WHERE resp_category = 4) AS client_errors,
+        COUNT(*) FILTER (WHERE resp_category = 5) AS server_errors
+    FROM
+        base_raw
+    GROUP BY
+        minute
 )">>,
 
     Spine = <<"spine AS (
@@ -821,7 +830,12 @@ requests_per_minute(Context) ->
 
     Q = <<"SELECT
     s.minute,
-    COALESCE(p.requests, 0) AS requests
+    COALESCE(p.requests, 0) AS requests,
+    COALESCE(p.infos, 0) AS infos,
+    COALESCE(p.successes, 0) AS successes,
+    COALESCE(p.redirections, 0) AS redirections, 
+    COALESCE(p.client_errors, 0) AS client_errors,
+    COALESCE(p.server_errors, 0) AS server_errors
 FROM spine s
 LEFT JOIN per_minute p USING (minute)
 ORDER BY s.minute;">>,
