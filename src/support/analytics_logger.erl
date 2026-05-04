@@ -182,7 +182,16 @@ buffering(EventType, EventContent, Data) ->
 
 %% Flush the appender and move to clean state.
 flushing(enter, _OldState, #data{appender=Appender}=Data) ->
-    ok = educkdb:appender_flush(Appender),
+    case educkdb:appender_flush(Appender) of
+        ok ->
+            ok;
+        {error, Reason} ->
+            ?LOG_ERROR(#{
+                         text => "Analytics flush failed - dropping batch",
+                         reason => Reason
+                        })
+    end,
+
     %% Drop the reference to the appender
     {next_state, flushing, Data#data{ appender=undefined }, [{state_timeout, 0, flushed}]};
 flushing(state_timeout, flushed, Data) ->
