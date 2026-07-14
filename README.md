@@ -6,6 +6,9 @@
 `zotonic_mod_analytics` is a module designed for capturing and logging Zotonic access metrics. These
 metrics are stored in a [DuckDB](https://duckdb.org/) database, enabling you to build your own DIY analytics platform.
 
+> **Archived:** This project is no longer maintained. I no longer use it and cannot justify maintaining it as a free project. The repository will remain available for reference, but I do not plan to review issues, pull requests, or publish new releases. Thank you to everyone who used and contributed to the project.
+
+
 ## Features
 
 - **Customizable Analytics**: Log and analyze access metrics from Zotonic.
