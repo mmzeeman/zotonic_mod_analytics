@@ -55,6 +55,7 @@
 -define(POOL_NAME, analytics_logger_db_pool).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
+-include_lib("epgsql/include/epgsql.hrl").
 
 %%
 %% Api
@@ -231,8 +232,8 @@ init_schema() ->
                     ok ->
                         %% Schema exists or was created, now create table
                         create_access_log_table(Conn, Schema);
-                    Error ->
-                        Error
+                    SError ->
+                        SError
                 end
             catch
                 Error:Reason:Stack ->
@@ -246,8 +247,8 @@ init_schema() ->
             after
                 close_connection(Conn)
             end;
-        Error ->
-            Error
+        ConnError ->
+            ConnError
     end.
 
 schema_exists(Conn, Schema) ->
@@ -487,8 +488,8 @@ do_flush_copy(Conn, Rows) ->
                     catch epgsql:put_copy_end(Conn, error),
                     Error
             end;
-        Error ->
-            Error
+        SQueryError ->
+            SQueryError
     end.
 
 stream_copy_rows(_Conn, []) ->
