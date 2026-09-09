@@ -73,14 +73,7 @@ get_pool_name() ->
 
 %% @doc Get a connection from the pool
 get_connection() ->
-    %% TODO... add a timer
-    case poolboy:checkout(?POOL_NAME) of
-        full ->
-            {error, full};
-        Pid when is_pid(Pid) ->
-            {ok, Pid}
-    end.
-
+    poolboy:checkout(?POOL_NAME).
 
 %%
 %% gen_statem callbacks
@@ -219,26 +212,79 @@ handle_event(EventType, EventContent, StateName, Data) ->
 %%
 
 init_schema() ->
-    case get_connection() of
+    DbOpts = get_db_options(),
+    Database = proplists:get_value(dbdatabase, DbOpts),
+    Schema = proplists:get_value(dbschema, DbOpts),
+    
+    case open_connection(Database, DbOpts) of
         {ok, Conn} ->
             try
-                ok = create_access_log_table(Conn),
-                ?LOG_INFO(#{text => "Analytics schema verified"}),
-                ok
+                Result = case schema_exists(Conn, Schema) of
+                    true ->
+                        ?LOG_INFO(#{text => "Analytics schema exists", schema => Schema}),
+                        ok;
+                    false ->
+                        ?LOG_NOTICE(#{text => "Creating analytics schema", schema => Schema}),
+                        create_schema(Conn, Schema)
+                end,
+                case Result of
+                    ok ->
+                        %% Schema exists or was created, now create table
+                        create_access_log_table(Conn, Schema);
+                    Error ->
+                        Error
+                end
             catch
-                Error:Reason ->
-                    ?LOG_ERROR(#{text => "Schema creation error", error => Error, reason => Reason}),
+                Error:Reason:Stack ->
+                    ?LOG_ERROR(#{
+                        text => "Schema initialization error",
+                        error => Error,
+                        reason => Reason,
+                        stack => Stack
+                    }),
                     {error, {Error, Reason}}
             after
-                poolboy:checkin(?POOL_NAME, Conn)
+                close_connection(Conn)
             end;
         Error ->
             Error
     end.
 
-create_access_log_table(Conn) ->
-    SQL = <<"
-        CREATE TABLE IF NOT EXISTS access_log (
+schema_exists(Conn, Schema) ->
+    case epgsql:equery(
+        Conn,
+        "SELECT schema_name FROM information_schema.schemata WHERE schema_name = $1",
+        [Schema]
+    ) of
+        {ok, _, Rows} ->
+            length(Rows) > 0;
+        Error ->
+            ?LOG_ERROR(#{text => "Error checking schema existence", error => Error}),
+            false
+    end.
+
+create_schema(Conn, Schema) ->
+    case epgsql:equery(Conn, "CREATE SCHEMA \"" ++ Schema ++ "\"", []) of
+        {ok, _, _} ->
+            ?LOG_NOTICE(#{text => "Analytics schema created", schema => Schema}),
+            ok;
+        {error, #error{codename = duplicate_schema}} ->
+            ?LOG_INFO(#{text => "Schema already exists", schema => Schema}),
+            ok;
+        {error, Reason} = Error ->
+            ?LOG_ERROR(#{
+                text => "Failed to create analytics schema",
+                schema => Schema,
+                error => Reason
+            }),
+            Error
+    end.
+
+create_access_log_table(Conn, Schema) ->
+    SchemaTable = Schema ++ ".access_log",
+    
+    TableSQL = "
+        CREATE TABLE IF NOT EXISTS " ++ SchemaTable ++ " (
             id BIGSERIAL PRIMARY KEY,
             req_version VARCHAR(10),
             req_method VARCHAR(10),
@@ -262,28 +308,68 @@ create_access_log_table(Conn) ->
             timezone VARCHAR(64),
             user_agent TEXT,
             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        
-        CREATE INDEX IF NOT EXISTS idx_access_log_timestamp 
-            ON access_log(timestamp DESC);
-        CREATE INDEX IF NOT EXISTS idx_access_log_site_timestamp 
-            ON access_log(site, timestamp DESC);
-        CREATE INDEX IF NOT EXISTS idx_access_log_rsc_id 
-            ON access_log(rsc_id);
-        CREATE INDEX IF NOT EXISTS idx_access_log_user_id 
-            ON access_log(user_id);
-        CREATE INDEX IF NOT EXISTS idx_access_log_session_id 
-            ON access_log(session_id);
-    ">>,
+        )",
     
-    case epgsql:squery(Conn, SQL) of
-        {ok, _} -> ok;
-        [{ok, _} | _] -> ok;
-        {error, {code, <<"42P07">>, _}} -> ok; % Table already exists
+    case epgsql:squery(Conn, TableSQL) of
+        {ok, _} -> 
+            create_indexes(Conn, Schema);
+        [{ok, _}] -> 
+            create_indexes(Conn, Schema);
+        {error, {code, <<"42P07">>, _}} -> 
+            % Table already exists
+            create_indexes(Conn, Schema);
         Error -> 
             ?LOG_ERROR(#{text => "Failed to create access_log table", error => Error}),
             Error
     end.
+
+create_indexes(Conn, Schema) ->
+    SchemaTable = Schema ++ ".access_log",
+    Indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_access_log_timestamp ON " ++ SchemaTable ++ " (timestamp DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_access_log_site_timestamp ON " ++ SchemaTable ++ " (site, timestamp DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_access_log_rsc_id ON " ++ SchemaTable ++ " (rsc_id)",
+        "CREATE INDEX IF NOT EXISTS idx_access_log_user_id ON " ++ SchemaTable ++ " (user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_access_log_session_id ON " ++ SchemaTable ++ " (session_id)"
+    ],
+    create_indexes_loop(Conn, Indexes).
+
+create_indexes_loop(_Conn, []) ->
+    ?LOG_INFO(#{text => "Analytics schema verified with all indexes"}),
+    ok;
+create_indexes_loop(Conn, [IndexSQL | Rest]) ->
+    case epgsql:squery(Conn, IndexSQL) of
+        {ok, _} ->
+            create_indexes_loop(Conn, Rest);
+        [{ok, _}] ->
+            create_indexes_loop(Conn, Rest);
+        {error, {code, <<"42P07">>, _}} ->
+            % Index already exists, continue
+            create_indexes_loop(Conn, Rest);
+        Error ->
+            ?LOG_WARNING(#{text => "Failed to create index", error => Error}),
+            create_indexes_loop(Conn, Rest)
+    end.
+
+%%
+%% Connection Management
+%%
+
+open_connection(Database, Options) ->
+    epgsql:connect(z_db_pgsql:build_connect_options(Database, Options)).
+
+close_connection(Connection) ->
+    epgsql:close(Connection).
+
+get_db_options() ->
+    [
+        {dbhost, z_config:get(analytics_db_host, "localhost")},
+        {dbport, z_config:get(analytics_db_port, 5432)},
+        {dbuser, z_config:get(analytics_db_user, "postgres")},
+        {dbpassword, z_config:get(analytics_db_password, "")},
+        {dbdatabase, z_config:get(analytics_db_name, "analytics")},
+        {dbschema, z_config:get(analytics_db_schema, "public")}
+    ].
 
 %%
 %% Format log entry for COPY
@@ -372,8 +458,11 @@ flush_via_copy(Rows) ->
     end.
 
 do_flush_copy(Conn, Rows) ->
+    Schema = z_config:get(analytics_db_schema, "public"),
+    SchemaTable = Schema ++ ".access_log",
+    
     %% Start COPY command
-    CopySQL = <<"COPY access_log (
+    CopySQL = <<"COPY ", (iolist_to_binary(SchemaTable))/binary, <<" (
                     req_version, req_method, req_bytes,
                     resp_category, resp_code, resp_bytes,
                     site, path, qs, referer,
@@ -381,7 +470,7 @@ do_flush_copy(Conn, Rows) ->
                     duration_process, duration_total,
                     peer_ip, session_id, user_id,
                     language, timezone, user_agent, timestamp
-                ) FROM STDIN (FORMAT CSV, DELIMITER E'\t', NULL 'null')">>,
+                ) FROM STDIN (FORMAT CSV, DELIMITER E'\t', NULL 'null')">> ,
     
     case epgsql:squery(Conn, CopySQL) of
         {copy, _} ->
