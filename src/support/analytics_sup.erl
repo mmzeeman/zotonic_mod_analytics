@@ -25,16 +25,24 @@
     init/1
 ]).
 
-%% @doc API for starting the ducklog server.
+-include_lib("zotonic_core/include/zotonic.hrl").
+
+%% @doc API for starting the analytics supervisor.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% @doc Return the notifier gen_server(s) to be used.
+%% @doc Return the supervisor tree for analytics.
 init([]) ->
     SupFlags = #{
         strategy => one_for_one
     },
+    
+    %% Create a database pool for analytics
+    PoolSpec = create_pool_spec(),
+    
     Children = [
+        %% Database pool must start before the logger
+        PoolSpec,
         #{
             id => analytics_logger,
             start => {analytics_logger, start_link, []},
@@ -43,3 +51,34 @@ init([]) ->
         }
     ],
     {ok, {SupFlags, Children}}.
+
+%%
+%% Helper functions
+%%
+
+%% @doc Create a poolboy childspec for the analytics database pool
+create_pool_spec() ->
+    PoolName = analytics_logger:get_pool_name(),
+    PoolSize = z_config:get(analytics_db_pool_size, 5),
+    
+    DbOpts = get_db_options(),
+    
+    PoolArgs = [
+        {name, {local, PoolName}},
+        {worker_module, z_db_pgsql},
+        {size, PoolSize},
+        {max_overflow, 0}
+    ],
+    
+    poolboy:child_spec(PoolName, PoolArgs, DbOpts).
+
+%% @doc Get PostgreSQL connection options from config
+get_db_options() ->
+    [
+        {dbhost, z_config:get(analytics_db_host, "localhost")},
+        {dbport, z_config:get(analytics_db_port, 5432)},
+        {dbuser, z_config:get(analytics_db_user, "postgres")},
+        {dbpassword, z_config:get(analytics_db_password, "")},
+        {dbdatabase, z_config:get(analytics_db_name, "analytics")},
+        {dbschema, z_config:get(analytics_db_schema, "public")}
+    ].
