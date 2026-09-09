@@ -77,8 +77,8 @@ get_db_options() ->
     [
         {dbhost, z_config:get(analytics_db_host, "localhost")},
         {dbport, z_config:get(analytics_db_port, 5432)},
-        {dbuser, z_config:get(analytics_db_user, "postgres")},
-        {dbpassword, z_config:get(analytics_db_password, "")},
-        {dbdatabase, z_config:get(analytics_db_name, "analytics")},
-        {dbschema, z_config:get(analytics_db_schema, "public")}
+        {dbuser, z_config:get(analytics_db_user, "zotonic")},
+        {dbpassword, z_config:get(analytics_db_password, "zotonic")},
+        {dbdatabase, z_config:get(analytics_db_name, "zotonic")},
+        {dbschema, z_config:get(analytics_db_schema, "analytics")}
     ].

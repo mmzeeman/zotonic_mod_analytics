@@ -73,7 +73,14 @@ get_pool_name() ->
 
 %% @doc Get a connection from the pool
 get_connection() ->
-    poolboy:checkout(?POOL_NAME).
+    %% TODO... add a timer
+    case poolboy:checkout(?POOL_NAME) of
+        full ->
+            {error, full};
+        Pid when is_pid(Pid) ->
+            {ok, Pid}
+    end.
+
 
 %%
 %% gen_statem callbacks

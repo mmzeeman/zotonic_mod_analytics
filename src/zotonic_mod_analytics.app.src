@@ -2,7 +2,7 @@
     {description, "Analytics for Zotonic sites."},
     {vsn, "0.6.0"},
     {registered, []},
-    {applications, [kernel, stdlib, zotonic_core, educkdb]},
+    {applications, [kernel, stdlib, zotonic_core]},
     {mod, {analytics_app, []}},
     {env, []},
     {modules, []},
