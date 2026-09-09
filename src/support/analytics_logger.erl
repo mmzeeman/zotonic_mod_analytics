@@ -269,9 +269,9 @@ create_access_log_table(Conn) ->
             ON access_log(session_id);
     ">>,
     
-    case z_db_pgsql:squery(Conn, SQL, 30000) of
+    case epgsql:squery(Conn, SQL) of
         {ok, _} -> ok;
-        {ok, _, _} -> ok;
+        [{ok, _} | _] -> ok;
         {error, {code, <<"42P07">>, _}} -> ok; % Table already exists
         Error -> 
             ?LOG_ERROR(#{text => "Failed to create access_log table", error => Error}),
@@ -376,18 +376,19 @@ do_flush_copy(Conn, Rows) ->
                     language, timezone, user_agent, timestamp
                 ) FROM STDIN (FORMAT CSV, DELIMITER E'\t', NULL 'null')">>,
     
-    case z_db_pgsql:squery(Conn, CopySQL, 30000) of
+    case epgsql:squery(Conn, CopySQL) of
         {copy, _} ->
-            %% Stream the rows
+            %% Stream the rows using epgsql's copy protocol
             case stream_copy_rows(Conn, Rows) of
                 ok ->
-                    %% End COPY
-                    case z_db_pgsql:put_copy_end(Conn) of
-                        {ok, _} -> ok;
+                    %% End COPY with successful marker
+                    case epgsql:put_copy_end(Conn) of
+                        ok -> ok;
                         {error, _} = Error -> Error
                     end;
                 Error ->
-                    catch z_db_pgsql:put_copy_end(Conn, <<"exception">>),
+                    %% Abort copy on error
+                    catch epgsql:put_copy_end(Conn, error),
                     Error
             end;
         Error ->
@@ -398,7 +399,7 @@ stream_copy_rows(_Conn, []) ->
     ok;
 stream_copy_rows(Conn, [Row | Rest]) ->
     Line = format_row_for_copy(Row),
-    case z_db_pgsql:put_copy_data(Conn, Line) of
+    case epgsql:put_copy_data(Conn, Line) of
         ok -> stream_copy_rows(Conn, Rest);
         Error -> Error
     end.
